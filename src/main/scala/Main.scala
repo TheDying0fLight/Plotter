@@ -25,24 +25,24 @@ object WindowFx extends JFXApp3 {
   var thickness = 2
 
   def xAxis(yV: Double, color: Color) = new Rectangle {
-    width = stage.width.value
-    height = thickness
     x = 0
     y = yV
+    width = stage.width.value
+    height = thickness
     fill = color
   }
 
   def yAxis(xV: Double, color: Color) = new Rectangle {
-    width = thickness
-    height = stage.height.value
     x = xV
     y = 0
+    width = thickness
+    height = stage.height.value
     fill = color
   }
 
+  def xMain = xAxis(centerRec.y, Black)
+  def yMain = yAxis(centerRec.x, Black)
   def grid = {
-    val xMain = xAxis(centerRec.y, Black)
-    val yMain = yAxis(centerRec.x, Black)
     var graph = List(xMain,yMain)
     var temp = center.y%100
     while (temp <= stage.height.value) {
