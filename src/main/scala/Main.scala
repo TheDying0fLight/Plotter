@@ -15,6 +15,7 @@ import scalafx.stage.{WindowEvent, StageStyle}
 import scalafx.Includes._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scalafx.scene.Group
 
 object WindowFx extends JFXApp3 {
 
@@ -22,9 +23,8 @@ object WindowFx extends JFXApp3 {
   var drag = new Point2D(0,0)
   var center = new Point2D(0,0)
   var centerRec = new Point2D(0,0)
-  var thickness = 2
 
-  def xAxis(yV: Double, color: Color) = new Rectangle {
+  def xAxis(yV: Double, color: Color, thickness: Double) = new Rectangle {
     x = 0
     y = yV
     width = stage.width.value
@@ -32,24 +32,31 @@ object WindowFx extends JFXApp3 {
     fill = color
   }
 
-  def yAxis(xV: Double, color: Color) = new Rectangle {
-    x = xV
+  def yAxis(xV: Double, color: Color, thickness: Double) = new Rectangle {
+    x = xV-thickness/2
     y = 0
     width = thickness
     height = stage.height.value
     fill = color
   }
 
-  def xMain = xAxis(centerRec.y, Black)
-  def yMain = yAxis(centerRec.x, Black)
   def grid = {
-    var graph = List(xMain,yMain)
+    var graph = new Group()
+    var xMain = xAxis(center.y,Black,4)
+    var yMain = yAxis(center.x,Black,4)
+    graph.children.addAll(xMain,yMain)
     var temp = center.y%100
     while (temp <= stage.height.value) {
-      graph :+ xAxis(temp,Blue)
+      if (temp==center.y) temp += 100
+      graph.children.addOne(xAxis(temp,Blue,1))
       temp += 100
     }
-    graph :+ xAxis(100,Blue)
+    temp = center.x%100
+    while (temp <= stage.width.value) {
+      if (temp==center.x) temp += 100
+      graph.children.addOne(yAxis(temp,Blue,1))
+      temp += 100
+    }
     println(graph)
     graph
   }
@@ -73,8 +80,7 @@ object WindowFx extends JFXApp3 {
     scene.onMouseDragged = (event: MouseEvent) => {
       drag = new Point2D(event.screenX - anchorPt.x + drag.x, event.screenY - anchorPt.y + drag.y)
       anchorPt = new Point2D(event.screenX, event.screenY)
-      center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)
-      centerRec = new Point2D(stage.width.value/2+drag.x-thickness/2, stage.height.value/2+drag.y-thickness/2)}}
+      center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)}}
 
   //Initalization of programm
   override def start(): Unit = {
@@ -92,7 +98,9 @@ object WindowFx extends JFXApp3 {
       }
     }
     center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)
-    centerRec = new Point2D(stage.width.value/2+drag.x-thickness/2, stage.height.value/2+drag.y-thickness/2)
+    //temporary fix for changing window size
+    frame.onChange(Platform.runLater {center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)})
+
     initDrag()
     //loop to update image
     loop(() => frame.update(frame.value + 1))
