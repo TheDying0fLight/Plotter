@@ -24,7 +24,7 @@ object WindowFx extends JFXApp3 {
   var center = new Point2D(0,0)
   var centerRec = new Point2D(0,0)
 
-  def xAxis(yV: Double, color: Color, thickness: Double) = new Rectangle {
+  def xAxisRec(yV: Double, color: Color, thickness: Double) = new Rectangle {
     x = 0
     y = yV
     width = stage.width.value
@@ -32,7 +32,7 @@ object WindowFx extends JFXApp3 {
     fill = color
   }
 
-  def yAxis(xV: Double, color: Color, thickness: Double) = new Rectangle {
+  def yAxisRec(xV: Double, color: Color, thickness: Double) = new Rectangle {
     x = xV-thickness/2
     y = 0
     width = thickness
@@ -40,47 +40,62 @@ object WindowFx extends JFXApp3 {
     fill = color
   }
 
-  def grid = {
-    var graph = new Group()
-    var xMain = xAxis(center.y,Black,4)
-    var yMain = yAxis(center.x,Black,4)
-    graph.children.addAll(xMain,yMain)
-    var temp = center.y%100
-    while (temp <= stage.height.value) {
-      if (temp==center.y) temp += 100
-      graph.children.addOne(xAxis(temp,Blue,1))
-      temp += 100
+  def grid(graph: Group, axis: (Double,Color,Double) => Rectangle, center: Double, border: Double) = {
+    var temp = center%50
+    if(!(temp==center%100)) {
+      graph.children.add(axis(temp,SkyBlue,1))
+      temp += 50}
+    while (temp <= border) {
+      if (!(temp==center)) graph.children.add(axis(temp,Blue,1))
+      temp += 50
+      graph.children.add(axis(temp,SkyBlue,1))
+      temp += 50
     }
-    temp = center.x%100
-    while (temp <= stage.width.value) {
-      if (temp==center.x) temp += 100
-      graph.children.addOne(yAxis(temp,Blue,1))
-      temp += 100
-    }
-    println(graph)
     graph
   }
 
-  /*case class State(fs: List[String]) {
+  def xAxisNum(yV: Double, num: Double) = new Text (x = stage.width.value/2-5, y = yV, t = num.toString)
 
-    //def evalFunction(func: String): List[Rectangle] =
-    def image(): List[Rectangle] = List(yAxis, xAxis) 
-  }*/
+  def numbers(graph: Group, center: Double, border: Double, num: (Double,Double) => Text) = {
+    var temp = center%50
+    if(!(temp==center%100)) {
+      graph.children.add(num(temp, temp))
+      temp += 50}
+    while (temp <= border) {
+      if (!(temp==center)) graph.children.add(num(temp, temp))
+      temp += 50
+      graph.children.add(num(temp, temp))
+      temp += 50
+    }
+    graph
+  }
 
-  //Reapeating loop with short wait
+  def image = {
+    var graph = new Group()
+    var xMain = xAxisRec(center.y,Black,4)
+    var yMain = yAxisRec(center.x,Black,4)
+    graph = grid(graph, xAxisRec, center.y, stage.height.value)
+    graph = grid(graph, yAxisRec, center.x, stage.width.value)
+    graph.children.addAll(xMain,yMain)
+    graph = numbers(graph, center.y, stage.height.value, xAxisNum)
+    graph
+  }
+
+  //Repeating loop with short wait
   def loop(update: () => Unit): Unit =
     Future {
       update()
       Thread.sleep(1)
     }.flatMap(_ => Future(loop(update)))
 
-  def initDrag() ={
+  def initDrag() = {
     val scene = stage.getScene()
     scene.onMousePressed = (event: MouseEvent) => anchorPt = new Point2D(event.screenX, event.screenY)
     scene.onMouseDragged = (event: MouseEvent) => {
       drag = new Point2D(event.screenX - anchorPt.x + drag.x, event.screenY - anchorPt.y + drag.y)
       anchorPt = new Point2D(event.screenX, event.screenY)
-      center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)}}
+      center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)}
+  }
 
   //Initalization of programm
   override def start(): Unit = {
@@ -93,8 +108,8 @@ object WindowFx extends JFXApp3 {
       height = 720
       scene = new Scene {
         title = "Plotter"
-        fill = LightGrey
-        frame.onChange(Platform.runLater {content = grid})
+        fill = tuple32JfxColor(250,250,250)
+        frame.onChange(Platform.runLater {content = image})
       }
     }
     center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)
