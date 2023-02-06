@@ -16,6 +16,8 @@ import scalafx.Includes._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalafx.scene.Group
+import scalafx.geometry.VPos._
+import scalafx.scene.text.TextAlignment
 
 object WindowFx extends JFXApp3 {
 
@@ -54,17 +56,19 @@ object WindowFx extends JFXApp3 {
     graph
   }
 
-  def xAxisNum(yV: Double, num: Double) = new Text (x = stage.width.value/2-5, y = yV, t = num.toString)
+  def xAxisNum(yV: Double, num: Double) = new Text {
+    x = stage.width.value/2+drag.x-110
+    y = yV
+    text = num.toInt.toString
+    textOrigin = Center
+    wrappingWidth = 100
+    textAlignment = TextAlignment.Right
+  }
 
   def numbers(graph: Group, center: Double, border: Double, num: (Double,Double) => Text) = {
     var temp = center%50
-    if(!(temp==center%100)) {
-      graph.children.add(num(temp, temp))
-      temp += 50}
     while (temp <= border) {
       if (!(temp==center)) graph.children.add(num(temp, temp))
-      temp += 50
-      graph.children.add(num(temp, temp))
       temp += 50
     }
     graph
@@ -94,7 +98,7 @@ object WindowFx extends JFXApp3 {
     scene.onMouseDragged = (event: MouseEvent) => {
       drag = new Point2D(event.screenX - anchorPt.x + drag.x, event.screenY - anchorPt.y + drag.y)
       anchorPt = new Point2D(event.screenX, event.screenY)
-      center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)}
+    }
   }
 
   //Initalization of programm
@@ -112,9 +116,9 @@ object WindowFx extends JFXApp3 {
         frame.onChange(Platform.runLater {content = image})
       }
     }
-    center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)
+    center = new Point2D(stage.scene.width.doubleValue/2+drag.x, stage.scene.height.doubleValue/2+drag.y)
     //temporary fix for changing window size
-    frame.onChange(Platform.runLater {center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)})
+    frame.onChange(Platform.runLater {center = new Point2D(stage.scene.width.doubleValue/2+drag.x, stage.scene.height.doubleValue/2+drag.y)})
 
     initDrag()
     //loop to update image
