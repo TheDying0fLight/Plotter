@@ -56,8 +56,17 @@ object WindowFx extends JFXApp3 {
     graph
   }
 
-  def xAxisNum(yV: Double, num: Double) = new Text {
-    x = stage.width.value/2+drag.x-110
+  def xAxisNum(xV: Double, num: Double) = new Text {
+    x = xV
+    y = stage.height.value/2+drag.y+10
+    text = num.toInt.toString
+    textOrigin = Center
+    wrappingWidth = 100
+    textAlignment = TextAlignment.Center
+  }
+
+  def yAxisNum(yV: Double, num: Double) = new Text {
+    x = stage.width.value/2+drag.x-105
     y = yV
     text = num.toInt.toString
     textOrigin = Center
@@ -81,7 +90,8 @@ object WindowFx extends JFXApp3 {
     graph = grid(graph, xAxisRec, center.y, stage.height.value)
     graph = grid(graph, yAxisRec, center.x, stage.width.value)
     graph.children.addAll(xMain,yMain)
-    graph = numbers(graph, center.y, stage.height.value, xAxisNum)
+    graph = numbers(graph, center.x, stage.width.value, xAxisNum)
+    graph = numbers(graph, center.y, stage.height.value, yAxisNum)
     graph
   }
 
@@ -89,7 +99,7 @@ object WindowFx extends JFXApp3 {
   def loop(update: () => Unit): Unit =
     Future {
       update()
-      Thread.sleep(1)
+      Thread.sleep(1000/60)
     }.flatMap(_ => Future(loop(update)))
 
   def initDrag() = {
@@ -104,7 +114,6 @@ object WindowFx extends JFXApp3 {
   //Initalization of programm
   override def start(): Unit = {
     val frame = IntegerProperty(0)
-    //val state = ObjectProperty(State(List()))
 
     //Graphical Window of Application
     stage = new JFXApp3.PrimaryStage {
@@ -116,9 +125,9 @@ object WindowFx extends JFXApp3 {
         frame.onChange(Platform.runLater {content = image})
       }
     }
-    center = new Point2D(stage.scene.width.doubleValue/2+drag.x, stage.scene.height.doubleValue/2+drag.y)
+    center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)
     //temporary fix for changing window size
-    frame.onChange(Platform.runLater {center = new Point2D(stage.scene.width.doubleValue/2+drag.x, stage.scene.height.doubleValue/2+drag.y)})
+    frame.onChange(Platform.runLater {center = new Point2D(stage.width.value/2+drag.x, stage.height.value/2+drag.y)})
 
     initDrag()
     //loop to update image
