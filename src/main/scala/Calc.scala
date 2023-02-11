@@ -1,7 +1,6 @@
-package Plotter
+package plotter
 
 import org.mariuszgromada.math.mxparser._
-val isCallSuccessful = License.iConfirmNonCommercialUse("John Doe")
 
 //stuff for calculation
 object Calculator:

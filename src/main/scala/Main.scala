@@ -1,4 +1,4 @@
-package Plotter
+package plotter
 
 //for the scene
 import scalafx.application.{JFXApp3, Platform}
