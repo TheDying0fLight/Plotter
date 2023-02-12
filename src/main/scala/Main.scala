@@ -14,25 +14,22 @@ import scalafx.scene.Group
 //for mouse interaction
 import scalafx.geometry.Point2D
 import scalafx.scene.input.MouseEvent
+import scalafx.scene.input.ScrollEvent
 import scalafx.stage.{WindowEvent, StageStyle}
 import scalafx.Includes._
 
 //for the numbers
 import scalafx.geometry.VPos._
-import scalafx.scene.text.TextAlignment
-import scalafx.scene.text.Font
-import scalafx.scene.text.FontPosture
-import scalafx.scene.text.FontWeight
+import scalafx.scene.text._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import net.objecthunter.exp4j.ExpressionBuilder
+import scala.collection.mutable.ArrayBuffer
+import scalafx.scene.shape.Polyline
 
 
 
 object Window extends JFXApp3 {
-  var anchorPt: (Double, Double) = (0,0)
-  var drag: (Double, Double) = (0,0)
-  var dragInt = (0,0)
   var center = (0,0)
   var stageV = (0,0)
   val state = IntegerProperty(0)
@@ -52,7 +49,7 @@ object Window extends JFXApp3 {
     }
     center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
     stageV = (stage.width.value.toInt, stage.height.value.toInt)
-    initDrag()
+    initMouse()
     //loop to update image
     loop(() => frame.update(frame.value + 1))
 
@@ -125,36 +122,30 @@ object Window extends JFXApp3 {
   def numbers(graph: Group, center: Int, border: Int, num: (Int,Double) => Text) = {
     var temp = center%100
     while (temp <= border) {
-      if (!(temp==center)) graph.children.add(num(temp, (center-temp)/100))
+      if (!(temp==center)) graph.children.add(num((temp*(zoom/100)).toInt, (center-temp)/100))
       temp += 100
     }
     graph
-  }
-
-  def point(xV: Double, yV: Double, color: Color, thickness: Int) = {
-    new Rectangle {
-      x = xV-thickness/2
-      y = yV-thickness/2
-      fill = color
-      width = thickness
-      height = thickness}
   }
   
   def evalFun(graph: Group, functions: List[(String,Color,Int)]) = {
     functions.map((fun,c,th) => 
         var e = new ExpressionBuilder(fun).variable("x").build()
+        var poly = new Polyline{stroke = c; strokeWidth = th}
         for (i <- 0 to stageV._1)
-          e.setVariable("x", (i-center._1).toDouble/100)
-          var temp = -(e.evaluate()*100)+center._2
-          if (temp>=0 && temp<=stageV._2) graph.children.add(point(i, temp, c, th)))
+          e.setVariable("x", (i-center._1)/zoom)
+          var temp = -(e.evaluate()*zoom)+center._2
+          //if (temp>=0 && temp<=stageV._2) 
+          poly.getPoints().addAll(i.toDouble, temp)
+        graph.children.add(poly))
     graph
   }
 
   //generating the image
   def image =
     var graph = new Group()
-    var xMain = xAxisRec(center._2,Black,2)
-    var yMain = yAxisRec(center._1,Black,2)
+    val xMain = xAxisRec(center._2,Black,2)
+    val yMain = yAxisRec(center._1,Black,2)
     var functs = List(("x^2", Blue, 3), ("x", Red, 2))
     graph = grid(graph, xAxisRec, center._2, stageV._2)
     graph = grid(graph, yAxisRec, center._1, stageV._1)
@@ -171,14 +162,20 @@ object Window extends JFXApp3 {
       Thread.sleep(1000/60)
     }.flatMap(_ => Future(loop(update)))
   }
+
+  var anchorPt: (Double, Double) = (0,0)
+  var drag: (Double, Double) = (0,0)
+  var dragInt = (0,0)
+  var zoom: Double = 100
   
-  def initDrag() =
+  def initMouse() =
     val scene = stage.getScene()
     scene.onMousePressed = (event: MouseEvent) => anchorPt = (event.screenX, event.screenY)
     scene.onMouseDragged = (event: MouseEvent) => 
-      drag = ((event.screenX-anchorPt._1+drag._1), (event.screenY-anchorPt._2+drag._2))
+      drag = (event.screenX-anchorPt._1+drag._1, event.screenY-anchorPt._2+drag._2)
       anchorPt = (event.screenX, event.screenY)
       state.update(state.value+1)
+    scene.onScroll = (event: ScrollEvent) => zoom = zoom+(event.deltaY*zoom/100)/10
 
   def update() = 
     Platform.runLater {
