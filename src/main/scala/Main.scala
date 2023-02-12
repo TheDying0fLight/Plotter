@@ -25,9 +25,9 @@ import scalafx.scene.text.FontPosture
 import scalafx.scene.text.FontWeight
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import net.objecthunter.exp4j.ExpressionBuilder
 
-import org.mariuszgromada.math.mxparser._
-val isCallSuccessful = License.iConfirmNonCommercialUse("John Doe")
+
 
 object Window extends JFXApp3 {
   var anchorPt: (Double, Double) = (0,0)
@@ -47,21 +47,18 @@ object Window extends JFXApp3 {
       scene = new Scene {
         title = "Plotter"
         fill = Color(0.95,0.95,0.95,1)
-        state.onChange(Platform.runLater {content = image})
+        frame.onChange(Platform.runLater {content = image})
       }
     }
     center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
     stageV = (stage.width.value.toInt, stage.height.value.toInt)
-    //temporary fix for changing window size
-    state.onChange(Platform.runLater {
-      center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
-      stageV = (stage.width.value.toInt, stage.height.value.toInt)
-      dragInt = (drag._1.toInt, drag._2.toInt)
-    })
     initDrag()
     //loop to update image
-    state.update(state.value + 1)
-    //loop(() => frame.update(frame.value + 1))
+    loop(() => frame.update(frame.value + 1))
+
+    stage.height.onChange(update())
+    stage.width.onChange(update())
+    state.onChange(update())
   }
 
   //templates for grid lines along the x and y Axis
@@ -101,7 +98,10 @@ object Window extends JFXApp3 {
   def xAxisNum(xV: Int, num: Double) = {
     new Text {
     x = xV-50
-    y = center._2+10
+    var d = 8
+    y = if(center._2+5-d+5<0) d
+      else if (center._2+10>stageV._2) stageV._2-15
+      else center._2+10
     text = "%.2f".format(-num).toDouble.toString //String.format("%2.1e",num)
     textOrigin = Center
     wrappingWidth = 100
@@ -111,7 +111,9 @@ object Window extends JFXApp3 {
 
   def yAxisNum(yV: Int, num: Double) = {
     new Text {
-    x = center._1-105
+    x = if(center._1-20<0) -80
+      else if (center._1>stageV._1) stageV._1-115
+      else center._1-105
     y = yV
     text = "%.2f".format(num).toDouble.toString //String.format("%2.1e",num)
     textOrigin = Center
@@ -139,17 +141,12 @@ object Window extends JFXApp3 {
   }
   
   def evalFun(graph: Group, functions: List[(String,Color,Int)]) = {
-    // val raw = Calculator.eval(functions.map((f,_,_) => f), 1, 100)
-    // for i <- 0 to functions.length-1
-    // do for j <- 0 to raw(i).size-1
-    //   do graph.children.add(point(raw(i)(j)._2, center._2-raw(i)(j)._2, functions(i)._2, functions(i)._3))
-    // graph
-    var x = new Argument("x")
     functions.map((fun,c,th) => 
-        var e = new Function("f", fun, "x")
-        for (i <- 0 to stageV._1 by th)
-            //if (e.calculate()<=drag._2+stageV._2 && e.calculate()>=drag._2-stageV._2) 
-            graph.children.add(point(i,e.calculate((i-center._1)/100)*100.toInt+center._2, c, th)))
+        var e = new ExpressionBuilder(fun).variable("x").build()
+        for (i <- 0 to stageV._1)
+          e.setVariable("x", (i-center._1).toDouble/100)
+          var temp = -(e.evaluate()*100)+center._2
+          if (temp>=0 && temp<=stageV._2) graph.children.add(point(i, temp, c, th)))
     graph
   }
 
@@ -168,12 +165,12 @@ object Window extends JFXApp3 {
     graph
 
   //Repeating loop with short wait
-  // def loop(update: () => Unit): Unit = {
-  //   Future {
-  //     update()
-  //     Thread.sleep(1000/60)
-  //   }.flatMap(_ => Future(loop(update)))
-  // }
+  def loop(update: () => Unit): Unit = {
+    Future {
+      update()
+      Thread.sleep(1000/60)
+    }.flatMap(_ => Future(loop(update)))
+  }
   
   def initDrag() =
     val scene = stage.getScene()
@@ -181,5 +178,12 @@ object Window extends JFXApp3 {
     scene.onMouseDragged = (event: MouseEvent) => 
       drag = ((event.screenX-anchorPt._1+drag._1), (event.screenY-anchorPt._2+drag._2))
       anchorPt = (event.screenX, event.screenY)
-      state.update(state.value + 1)
+      state.update(state.value+1)
+
+  def update() = 
+    Platform.runLater {
+      center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
+      stageV = (stage.width.value.toInt, stage.height.value.toInt)
+      dragInt = (drag._1.toInt, drag._2.toInt)
+    }
 }
