@@ -14,25 +14,22 @@ import scalafx.scene.Group
 //for mouse interaction
 import scalafx.geometry.Point2D
 import scalafx.scene.input.MouseEvent
+import scalafx.scene.input.ScrollEvent
 import scalafx.stage.{WindowEvent, StageStyle}
 import scalafx.Includes._
 
 //for the numbers
 import scalafx.geometry.VPos._
-import scalafx.scene.text.TextAlignment
-import scalafx.scene.text.Font
-import scalafx.scene.text.FontPosture
-import scalafx.scene.text.FontWeight
+import scalafx.scene.text._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import net.objecthunter.exp4j.ExpressionBuilder
+import scala.collection.mutable.ArrayBuffer
+import scalafx.scene.shape.Polyline
 
-import org.mariuszgromada.math.mxparser._
-val isCallSuccessful = License.iConfirmNonCommercialUse("John Doe")
+
 
 object Window extends JFXApp3 {
-  var anchorPt: (Double, Double) = (0,0)
-  var drag: (Double, Double) = (0,0)
-  var dragInt = (0,0)
   var center = (0,0)
   var stageV = (0,0)
   val state = IntegerProperty(0)
@@ -47,21 +44,18 @@ object Window extends JFXApp3 {
       scene = new Scene {
         title = "Plotter"
         fill = Color(0.95,0.95,0.95,1)
-        state.onChange(Platform.runLater {content = image})
+        frame.onChange(Platform.runLater {content = image})
       }
     }
     center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
     stageV = (stage.width.value.toInt, stage.height.value.toInt)
-    //temporary fix for changing window size
-    state.onChange(Platform.runLater {
-      center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
-      stageV = (stage.width.value.toInt, stage.height.value.toInt)
-      dragInt = (drag._1.toInt, drag._2.toInt)
-    })
-    initDrag()
+    initMouse()
     //loop to update image
-    state.update(state.value + 1)
-    //loop(() => frame.update(frame.value + 1))
+    loop(() => frame.update(frame.value + 1))
+
+    stage.height.onChange(update())
+    stage.width.onChange(update())
+    state.onChange(update())
   }
 
   //templates for grid lines along the x and y Axis
@@ -101,7 +95,10 @@ object Window extends JFXApp3 {
   def xAxisNum(xV: Int, num: Double) = {
     new Text {
     x = xV-50
-    y = center._2+10
+    var d = 8
+    y = if(center._2+5-d+5<0) d
+      else if (center._2+10>stageV._2) stageV._2-15
+      else center._2+10
     text = "%.2f".format(-num).toDouble.toString //String.format("%2.1e",num)
     textOrigin = Center
     wrappingWidth = 100
@@ -111,7 +108,9 @@ object Window extends JFXApp3 {
 
   def yAxisNum(yV: Int, num: Double) = {
     new Text {
-    x = center._1-105
+    x = if(center._1-20<0) -80
+      else if (center._1>stageV._1) stageV._1-115
+      else center._1-105
     y = yV
     text = "%.2f".format(num).toDouble.toString //String.format("%2.1e",num)
     textOrigin = Center
@@ -123,41 +122,29 @@ object Window extends JFXApp3 {
   def numbers(graph: Group, center: Int, border: Int, num: (Int,Double) => Text) = {
     var temp = center%100
     while (temp <= border) {
-      if (!(temp==center)) graph.children.add(num(temp, (center-temp)/100))
+      if (!(temp==center)) graph.children.add(num((temp*(zoom/100)).toInt, (center-temp)/100))
       temp += 100
     }
     graph
   }
-
-  def point(xV: Double, yV: Double, color: Color, thickness: Int) = {
-    new Rectangle {
-      x = xV-thickness/2
-      y = yV-thickness/2
-      fill = color
-      width = thickness
-      height = thickness}
-  }
   
   def evalFun(graph: Group, functions: List[(String,Color,Int)]) = {
-    // val raw = Calculator.eval(functions.map((f,_,_) => f), 1, 100)
-    // for i <- 0 to functions.length-1
-    // do for j <- 0 to raw(i).size-1
-    //   do graph.children.add(point(raw(i)(j)._2, center._2-raw(i)(j)._2, functions(i)._2, functions(i)._3))
-    // graph
-    var x = new Argument("x")
     functions.map((fun,c,th) => 
-        var e = new Function("f", fun, "x")
-        for (i <- 0 to stageV._1 by th)
-            //if (e.calculate()<=drag._2+stageV._2 && e.calculate()>=drag._2-stageV._2) 
-            graph.children.add(point(i,e.calculate((i-center._1)/100)*100.toInt+center._2, c, th)))
+        var e = new ExpressionBuilder(fun).variable("x").build()
+        var poly = new Polyline{stroke = c; strokeWidth = th}
+        for (i <- 0 to stageV._1)
+          e.setVariable("x", (i-center._1)/zoom)
+          var temp = -(e.evaluate()*zoom)+center._2
+          poly.getPoints().addAll(i.toDouble, temp)
+        graph.children.add(poly))
     graph
   }
 
   //generating the image
   def image =
     var graph = new Group()
-    var xMain = xAxisRec(center._2,Black,2)
-    var yMain = yAxisRec(center._1,Black,2)
+    val xMain = xAxisRec(center._2,Black,2)
+    val yMain = yAxisRec(center._1,Black,2)
     var functs = List(("x^2", Blue, 3), ("x", Red, 2))
     graph = grid(graph, xAxisRec, center._2, stageV._2)
     graph = grid(graph, yAxisRec, center._1, stageV._1)
@@ -168,18 +155,31 @@ object Window extends JFXApp3 {
     graph
 
   //Repeating loop with short wait
-  // def loop(update: () => Unit): Unit = {
-  //   Future {
-  //     update()
-  //     Thread.sleep(1000/60)
-  //   }.flatMap(_ => Future(loop(update)))
-  // }
+  def loop(update: () => Unit): Unit = {
+    Future {
+      update()
+      Thread.sleep(1000/60)
+    }.flatMap(_ => Future(loop(update)))
+  }
+
+  var anchorPt: (Double, Double) = (0,0)
+  var drag: (Double, Double) = (0,0)
+  var dragInt = (0,0)
+  var zoom: Double = 100
   
-  def initDrag() =
+  def initMouse() =
     val scene = stage.getScene()
     scene.onMousePressed = (event: MouseEvent) => anchorPt = (event.screenX, event.screenY)
     scene.onMouseDragged = (event: MouseEvent) => 
-      drag = ((event.screenX-anchorPt._1+drag._1), (event.screenY-anchorPt._2+drag._2))
+      drag = (event.screenX-anchorPt._1+drag._1, event.screenY-anchorPt._2+drag._2)
       anchorPt = (event.screenX, event.screenY)
-      state.update(state.value + 1)
+      state.update(state.value+1)
+    scene.onScroll = (event: ScrollEvent) => zoom = zoom+(event.deltaY*zoom/100)/10
+
+  def update() = 
+    Platform.runLater {
+      center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
+      stageV = (stage.width.value.toInt, stage.height.value.toInt)
+      dragInt = (drag._1.toInt, drag._2.toInt)
+    }
 }

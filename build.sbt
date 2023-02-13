@@ -27,7 +27,7 @@ version := "1.0"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
 libraryDependencies += "org.scalafx" %% "scalafx" % "16.0.0-R25"
-libraryDependencies += "org.mariuszgromada.math" % "MathParser.org-mXparser" % "5.2.1"
+libraryDependencies += "com.elmakers.math" % "exp4j" % "1.0"
 
 // Determine OS version of JavaFX binaries
 lazy val osName = System.getProperty("os.name") match {
