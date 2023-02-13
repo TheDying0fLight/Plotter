@@ -5,8 +5,6 @@ import scalafx.application.{JFXApp3, Platform}
 import scalafx.scene.Scene
 import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color._
-import scalafx.scene.shape.Rectangle
-import scalafx.scene.text.Text
 import scalafx.beans.property.{IntegerProperty, ObjectProperty}
 import scala.concurrent.Future
 import scalafx.scene.Group
@@ -18,16 +16,10 @@ import scalafx.scene.input.ScrollEvent
 import scalafx.stage.{WindowEvent, StageStyle}
 import scalafx.Includes._
 
-//for the numbers
-import scalafx.geometry.VPos._
-import scalafx.scene.text._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import net.objecthunter.exp4j.ExpressionBuilder
 import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.shape.Polyline
-
-
 
 object Window extends JFXApp3 {
   var center = (0,0)
@@ -57,78 +49,9 @@ object Window extends JFXApp3 {
     stage.width.onChange(update())
     state.onChange(update())
   }
-
-  //templates for grid lines along the x and y Axis
-  def xAxisRec(yV: Int, color: Color, thickness: Int) = {
-    new Rectangle {
-    x = 0
-    y = yV
-    width = stage.width.value
-    height = thickness
-    fill = color}
-  }
-
-  def yAxisRec(xV: Int, color: Color, thickness: Int) = {
-    new Rectangle {
-    x = xV-thickness/2
-    y = 0
-    width = thickness
-    height = stage.height.value
-    fill = color}
-  }
-
-  def grid(graph: Group, axis: (Int,Color,Int) => Rectangle, center: Int, border: Int) = {
-    var temp = center%50
-    if(!(temp==center%100)) {
-      graph.children.add(axis(temp,Color(0,0,0,0.2),1))
-      temp += 50}
-    while (temp <= border) {
-      if (!(temp==center)) graph.children.add(axis(temp,Color(0,0,0,0.5),1))
-      temp += 50
-      graph.children.add(axis(temp,Color(0,0,0,0.2),1))
-      temp += 50
-    }
-    graph
-  }
-
-  //templates for numbers on x and y Axis
-  def xAxisNum(xV: Int, num: Double) = {
-    new Text {
-    x = xV-50
-    var d = 8
-    y = if(center._2+5-d+5<0) d
-      else if (center._2+10>stageV._2) stageV._2-15
-      else center._2+10
-    text = "%.2f".format(-num).toDouble.toString //String.format("%2.1e",num)
-    textOrigin = Center
-    wrappingWidth = 100
-    textAlignment = TextAlignment.Center
-    font = Font.font("Arial", FontWeight.Bold, FontPosture.Regular, 12)}
-  }
-
-  def yAxisNum(yV: Int, num: Double) = {
-    new Text {
-    x = if(center._1-20<0) -80
-      else if (center._1>stageV._1) stageV._1-115
-      else center._1-105
-    y = yV
-    text = "%.2f".format(num).toDouble.toString //String.format("%2.1e",num)
-    textOrigin = Center
-    wrappingWidth = 100
-    textAlignment = TextAlignment.Right
-    font = Font.font("Arial", FontWeight.Bold, FontPosture.Regular, 12)}
-  }
-
-  def numbers(graph: Group, center: Int, border: Int, num: (Int,Double) => Text) = {
-    var temp = center%100
-    while (temp <= border) {
-      if (!(temp==center)) graph.children.add(num((temp*(zoom/100)).toInt, (center-temp)/100))
-      temp += 100
-    }
-    graph
-  }
   
-  def evalFun(graph: Group, functions: List[(String,Color,Int)]) = {
+  def evalFun(functions: List[(String,Color,Int)]) = {
+    val graph = new Group()
     functions.map((fun,c,th) => 
         var e = new ExpressionBuilder(fun).variable("x").build()
         var poly = new Polyline{stroke = c; strokeWidth = th}
@@ -139,20 +62,13 @@ object Window extends JFXApp3 {
         graph.children.add(poly))
     graph
   }
-
+  
+  val grid = Grid(center,stageV,zoom)
   //generating the image
   def image =
-    var graph = new Group()
-    val xMain = xAxisRec(center._2,Black,2)
-    val yMain = yAxisRec(center._1,Black,2)
-    var functs = List(("x^2", Blue, 3), ("x", Red, 2))
-    graph = grid(graph, xAxisRec, center._2, stageV._2)
-    graph = grid(graph, yAxisRec, center._1, stageV._1)
-    graph.children.addAll(xMain,yMain)
-    graph = evalFun(graph, functs)
-    graph = numbers(graph, center._1, stageV._1, xAxisNum)
-    graph = numbers(graph, center._2, stageV._2, yAxisNum)
-    graph
+    grid.center = center; grid.stageV = stageV; grid.zoom = zoom
+    val functs = List(("x^2", Blue, 3), ("x", Red, 2))
+    new Group(grid.getCoordinateSystem, evalFun(functs))
 
   //Repeating loop with short wait
   def loop(update: () => Unit): Unit = {
