@@ -1,6 +1,7 @@
 package plotter
 
 import scalafx.scene.shape.Rectangle
+import scalafx.scene.Node
 import scalafx.scene.text.Text
 import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color._
@@ -9,7 +10,8 @@ import scalafx.geometry.VPos._
 import scalafx.scene.text._
 import scalafx.scene.paint.PaintIncludes.jfxColor2sfx
 
-class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: (Double)):
+
+class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double):
   var gridColor = Black
   var gridThickness = 2
 
@@ -41,18 +43,23 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: (Doubl
     fill = color}
   }
 
-  private def grid(axis: (Int,Color,Int) => Rectangle, centerXY: Int, border: Int) = {
-    var temp = centerXY%50
+  private def grid(axis: (Int,Color,Int) => Rectangle, center: Int, border: Int) = {
     var thickness = gridThickness/2
+    var step = stepFinder/2
+    var point = center+step
     var graph = new Group()
-    if(!(temp==centerXY%100)) {
-      graph.children.add(axis(temp, gridColor.opacity(0.2), thickness))
-      temp += 50}
-    while (temp <= border) {
-      if (!(temp==centerXY)) graph.children.add(axis(temp, gridColor.opacity(0.5), thickness))
-      temp += 50
-      graph.children.add(axis(temp, gridColor.opacity(0.2), thickness))
-      temp += 50
+    while (stepEval(point, center) <= border) {
+      graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.2), thickness))
+      point += step
+      graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.5), thickness))
+      point += step
+    }
+    point = center-step
+    while (stepEval(point, center) >= 0) {
+      graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.2), thickness))
+      point -= step
+      graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.5), thickness))
+      point -= step
     }
     graph
   }
@@ -85,12 +92,52 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: (Doubl
     font = Font.font("Arial", FontWeight.Bold, FontPosture.Regular, 12)}
   }
 
-  private def numbers(centerXY: Int, border: Int, num: (Int,Double) => Text) = {
-    var temp = centerXY%100
+  private def numbers(center: Int, border: Int, num: (Int,Double) => Text) = {
+    var step = stepFinder
+    var point = center+step
     var graph = new Group()
-    while (temp <= border) {
-      if (!(temp==centerXY)) graph.children.add(num((temp*(zoom/100)).toInt, (centerXY-temp)/100))
-      temp += 100
+    while (stepEval(point, center) <= border) {
+      graph.children.add(num(stepEval(point, center), (center-point)/100))
+      point += step
+    }
+    point = center-step
+    while (stepEval(point, center) >= 0) {
+      graph.children.add(num(stepEval(point, center), (center-point)/100))
+      point -= step
     }
     graph
+  }
+
+  // private def graphing[A](center: Int, border: Int, shape: A => Node) = {
+  //   var step = stepFinder
+  //   var point = center+step
+  //   var graph = new Group()
+  //   while (stepEval(point, center) <= border) {
+  //     graph.children.add(shape())
+  //     point += step
+  //   }
+  //   point = center-step
+  //   while (stepEval(point, center) >= 0) {
+  //     graph.children.add(shape())
+  //     point -= step
+  //   }
+  //   graph
+  // }
+
+  private def stepEval(point: Double, center: Int) = ((point-center)*(zoom/100)+center).toInt
+
+  private def stepFinder = {
+    var step = 100.toDouble
+    var tempZoom = zoom
+    if (tempZoom < 75) 
+      while (tempZoom < 75)
+        tempZoom *= 2; step *= 2
+        if (tempZoom < 75) {tempZoom *= 2.5; step *= 2.5}
+
+    else if (tempZoom > 150)
+      while (tempZoom > 150)
+        tempZoom /= 2; step /= 2
+        if (tempZoom > 150) {tempZoom /= 2.5; step /= 2.5}
+
+    step
   }

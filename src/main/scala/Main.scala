@@ -20,10 +20,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import net.objecthunter.exp4j.ExpressionBuilder
 import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.shape.Polyline
+import scalafx.scene.text.Text
 
 object MainWindow extends JFXApp3 {
-  var center = (0,0)
+  var stageCenterXY = (0,0)
   var stageSizeXY = (0,0)
+
+  def update() = 
+    Platform.runLater {
+      stageCenterXY = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
+      stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
+    }
 
   //Initalization of programm
   override def start(): Unit = {
@@ -38,14 +45,9 @@ object MainWindow extends JFXApp3 {
         frame.onChange(Platform.runLater {content = image})
       }
     }
-    center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
-    stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
-    initMouse()
+    initMouseAction()
     //loop to update image
-    loop(() => frame.update(frame.value + 1))
-
-    stage.height.onChange(update())
-    stage.width.onChange(update())
+    loop(() => {frame.update(frame.value + 1); update()})
   }
   
   def evalFun(functions: List[(String,Color,Int)]) = {
@@ -54,20 +56,34 @@ object MainWindow extends JFXApp3 {
         var e = new ExpressionBuilder(fun).variable("x").build()
         var poly = new Polyline{stroke = c; strokeWidth = th}
         for (i <- 0 to stageSizeXY._1)
-          e.setVariable("x", (i-center._1)/zoom)
-          var temp = -(e.evaluate()*zoom)+center._2
+          e.setVariable("x", (i-stageCenterXY._1)/zoom)
+          var temp = -(e.evaluate()*zoom)+stageCenterXY._2
           poly.getPoints().addAll(i.toDouble, temp)
         graph.children.add(poly))
     graph
   }
   
-  val grid = Grid(center,stageSizeXY,zoom)
+  val grid = Grid(stageCenterXY,stageSizeXY,zoom)
   val functs = List(("x^2", Blue, 3), ("x", Red, 2))
+  val zoomSpeed = 2
   
   //generating the image
   def image =
-    grid.centerXY = center; grid.stageSizeXY = stageSizeXY; grid.zoom = zoom
-    new Group(grid.getCoordinateSystem, evalFun(functs))
+    val zoomText = new Text{x = 100; y = 100; text = zoom.toString()}
+    grid.centerXY = stageCenterXY; grid.stageSizeXY = stageSizeXY; grid.zoom = zoom
+    new Group(grid.getCoordinateSystem, evalFun(functs), zoomText)
+
+  var drag: (Double, Double) = (0,0)
+  var zoom: Double = 100
+  
+  def initMouseAction() =
+    var anchorPt: (Double, Double) = (0,0)
+    val scene = stage.getScene()
+    scene.onMousePressed = (event: MouseEvent) => anchorPt = (event.screenX, event.screenY)
+    scene.onMouseDragged = (event: MouseEvent) => 
+      drag = (event.screenX-anchorPt._1+drag._1, event.screenY-anchorPt._2+drag._2)
+      anchorPt = (event.screenX, event.screenY)
+    scene.onScroll = (event: ScrollEvent) => zoom = zoom + zoomSpeed*(event.deltaY*zoom/100)/10
 
   //Repeating loop with short wait
   def loop(update: () => Unit): Unit = {
@@ -76,23 +92,4 @@ object MainWindow extends JFXApp3 {
       Thread.sleep(1000/60)
     }.flatMap(_ => Future(loop(update)))
   }
-
-  var drag: (Double, Double) = (0,0)
-  var zoom: Double = 100
-  
-  def initMouse() =
-    var anchorPt: (Double, Double) = (0,0)
-    val scene = stage.getScene()
-    scene.onMousePressed = (event: MouseEvent) => anchorPt = (event.screenX, event.screenY)
-    scene.onMouseDragged = (event: MouseEvent) => 
-      drag = (event.screenX-anchorPt._1+drag._1, event.screenY-anchorPt._2+drag._2)
-      anchorPt = (event.screenX, event.screenY)
-      update()
-    scene.onScroll = (event: ScrollEvent) => zoom = zoom + (event.deltaY*zoom/100)/10
-
-  def update() = 
-    Platform.runLater {
-      center = ((stage.width.value/2+drag._1).toInt, (stage.height.value/2+drag._2).toInt)
-      stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
-    }
 }
