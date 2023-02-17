@@ -46,7 +46,7 @@ class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: 
   private def grid(axis: (Int,Color,Int) => Rectangle, center: Double, border: Int) = {
     var thickness = gridThickness/2
     var step = stepFinder/2
-    var point = center+step
+    var point = if(center-step < border*2) center+step else center%border+border
     var graph = new Group()
     while (stepEval(point, center) <= border) {
       graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.2), thickness))
@@ -54,7 +54,7 @@ class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: 
       graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.5), thickness))
       point += step
     }
-    point = center-step
+    point = if(center-step < border*2) center-step else center%border+border
     while (stepEval(point, center) >= 0) {
       graph.children.add(axis(stepEval(point, center), gridColor.opacity(0.2), thickness))
       point -= step
@@ -94,13 +94,13 @@ class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: 
 
   private def numbers(center: Double, border: Int, num: (Int,Double) => Text) = {
     var step = stepFinder
-    var point = center+step
+    var point = if(center-step < border*2) center+step else center%border+border
     var graph = new Group()
     while (stepEval(point, center) <= border) {
       graph.children.add(num(stepEval(point, center), (center-point)/100))
       point += step
     }
-    point = center-step
+    point = if(center-step < border*2) center-step else center%border+border
     while (stepEval(point, center) >= 0) {
       graph.children.add(num(stepEval(point, center), (center-point)/100))
       point -= step
@@ -133,11 +133,13 @@ class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: 
       while (tempZoom < 75)
         tempZoom *= 2; step *= 2
         if (tempZoom < 75) {tempZoom *= 2.5; step *= 2.5}
+        if (tempZoom < 75) {tempZoom *= 2; step *= 2}
 
     else if (tempZoom > 150)
       while (tempZoom > 150)
         tempZoom /= 2; step /= 2
         if (tempZoom > 150) {tempZoom /= 2.5; step /= 2.5}
+        if (tempZoom > 150) {tempZoom /= 2; step /= 2}
 
     step
   }

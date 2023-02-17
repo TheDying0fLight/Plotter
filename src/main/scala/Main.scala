@@ -23,14 +23,12 @@ import scalafx.scene.shape.Polyline
 import scalafx.scene.text.Text
 
 object MainWindow extends JFXApp3 {
-  var center: (Double, Double) = (0,0)
   var centerDragged: (Double,Double) = (0,0)
   var stageSizeXY = (0,0)
   val frame = IntegerProperty(0)
 
   def update() = 
     Platform.runLater {
-      center = (stage.width.value/2, stage.height.value/2)
       centerDragged = (stage.width.value/2+drag._1, stage.height.value/2+drag._2)
       stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
       frame.update(frame.value + 1)
@@ -48,7 +46,11 @@ object MainWindow extends JFXApp3 {
         frame.onChange(Platform.runLater {content = image})
       }
     }
+    for(i <- 1 to 100)
+      update()
     initMouseAction()
+    stage.width.onChange(update())
+    stage.height.onChange(update())
     //loop to update image
     //loop(() => {frame.update(frame.value + 1); update()})
   }
@@ -68,7 +70,6 @@ object MainWindow extends JFXApp3 {
   
   val grid = Grid(centerDragged,stageSizeXY,zoom)
   val functs = List(("x^2", Blue, 3), ("x", Red, 2))
-  val zoomSpeed = 2
   
   //generating the image
   def image =
@@ -78,6 +79,7 @@ object MainWindow extends JFXApp3 {
 
   var drag: (Double, Double) = (0,0)
   var zoom: Double = 100
+  val zoomSpeed = 2
   
   def initMouseAction() =
     var anchorPt: (Double, Double) = (0,0)
