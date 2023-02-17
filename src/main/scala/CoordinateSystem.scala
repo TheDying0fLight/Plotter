@@ -11,7 +11,7 @@ import scalafx.scene.text._
 import scalafx.scene.paint.PaintIncludes.jfxColor2sfx
 
 
-class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double):
+class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: Double):
   var gridColor = Black
   var gridThickness = 2
 
@@ -25,7 +25,7 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double
     new Group(xSubAxis, ySubAxis, xMainAxis, yMainAxis, xAxisNums, yAxisNums)
 
   //templates for grid lines along the x and y Axis
-  private def xAxisRec(yValue: Int, color: Color, thickness: Int) = {
+  private def xAxisRec(yValue: Double, color: Color, thickness: Int) = {
     new Rectangle {
     x = 0
     y = yValue
@@ -34,7 +34,7 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double
     fill = color}
   }
 
-  private def yAxisRec(xValue: Int, color: Color, thickness: Int) = {
+  private def yAxisRec(xValue: Double, color: Color, thickness: Int) = {
     new Rectangle {
     x = xValue-thickness/2
     y = 0
@@ -43,7 +43,7 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double
     fill = color}
   }
 
-  private def grid(axis: (Int,Color,Int) => Rectangle, center: Int, border: Int) = {
+  private def grid(axis: (Int,Color,Int) => Rectangle, center: Double, border: Int) = {
     var thickness = gridThickness/2
     var step = stepFinder/2
     var point = center+step
@@ -92,7 +92,7 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double
     font = Font.font("Arial", FontWeight.Bold, FontPosture.Regular, 12)}
   }
 
-  private def numbers(center: Int, border: Int, num: (Int,Double) => Text) = {
+  private def numbers(center: Double, border: Int, num: (Int,Double) => Text) = {
     var step = stepFinder
     var point = center+step
     var graph = new Group()
@@ -124,7 +124,7 @@ class Grid(var centerXY: (Int,Int), var stageSizeXY: (Int,Int), var zoom: Double
   //   graph
   // }
 
-  private def stepEval(point: Double, center: Int) = ((point-center)*(zoom/100)+center).toInt
+  private def stepEval(point: Double, center: Double) = ((point-center)*(zoom/100)+center).toInt
 
   private def stepFinder = {
     var step = 100.toDouble
