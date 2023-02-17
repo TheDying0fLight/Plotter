@@ -14,6 +14,7 @@ import scalafx.scene.paint.PaintIncludes.jfxColor2sfx
 class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: Double):
   var gridColor = Black
   var gridThickness = 2
+  var textDistanceFromBorder = 8
 
   def getCoordinateSystem =
     val xMainAxis = xAxisRec(centerXY._2, gridColor, gridThickness)
@@ -68,9 +69,8 @@ class Grid(var centerXY: (Double,Double), var stageSizeXY: (Int,Int), var zoom: 
   private def xAxisNum(xValue: Int, num: Double) = {
     new Text {
     x = xValue-50
-    var distanceFromBorder = 8
-    y = if(centerXY._2+5-distanceFromBorder+5<0) distanceFromBorder
-      else if (centerXY._2+10>stageSizeXY._2) stageSizeXY._2-15
+    y = if(centerXY._2 < textDistanceFromBorder-10) textDistanceFromBorder
+      else if (centerXY._2 > stageSizeXY._2-textDistanceFromBorder-45) stageSizeXY._2-36-textDistanceFromBorder
       else centerXY._2+10
     text = "%.2f".format(-num).toDouble.toString //String.format("%2.1e",num)
     textOrigin = Center
