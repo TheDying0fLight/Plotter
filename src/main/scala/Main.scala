@@ -76,8 +76,10 @@ object MainWindow extends JFXApp3 {
 
   // generating the image
   def image =
-    val zoomText = new Text { x = 100; y = 100; text = zoom.toString() }
-    grid.centerXY = centerDragged; grid.stageSizeXY = stageSizeXY;
+    val zoomText = new Text {
+      x = 10; y = 15; text = s"Zoom: ${zoom.toString()}%"
+    }
+    grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY;
     grid.zoom = zoom
     new Group(grid.getCoordinateSystem, evalFun(functs), zoomText)
 
@@ -85,7 +87,7 @@ object MainWindow extends JFXApp3 {
   var zoom: Double = 100
   val zoomSpeed = 2
 
-  def initMouseAction() =
+  def initMouseAction() = {
     var anchorPt: (Double, Double) = (0, 0)
     val scene = stage.getScene()
     scene.onMousePressed = (event: MouseEvent) =>
@@ -98,8 +100,9 @@ object MainWindow extends JFXApp3 {
       anchorPt = (event.screenX, event.screenY)
       update()
     scene.onScroll = (event: ScrollEvent) => zoomer(event)
+  }
 
-  def zoomer(event: ScrollEvent) =
+  def zoomer(event: ScrollEvent) = {
     val newZoom = (zoom + zoomSpeed * (event.deltaY * zoom / 100) / 10)
     val zoomFactor = newZoom / zoom
     val relativeMousePosition =
@@ -112,6 +115,7 @@ object MainWindow extends JFXApp3 {
     )
     zoom = newZoom
     update()
+  }
 
   // Repeating loop with short wait
   def loop(update: () => Unit): Unit = {

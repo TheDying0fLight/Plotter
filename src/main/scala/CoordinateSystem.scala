@@ -10,26 +10,21 @@ import scalafx.geometry.VPos._
 import scalafx.scene.text._
 import scalafx.scene.paint.PaintIncludes.jfxColor2sfx
 
-class Grid(
-    var centerXY: (Double, Double),
-    var stageSizeXY: (Int, Int),
-    var zoom: Double
-):
+class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), var zoom: Double):
   var gridColor = Black
   var gridThickness = 2
   var textDistanceFromBorder = 8
 
   def getCoordinateSystem =
-    val xMainAxis = xAxisRec(centerXY(1), gridThickness, gridColor)
-    val yMainAxis = yAxisRec(centerXY(0), gridThickness, gridColor)
-    val xAxisNums = graphing(xAxisNum)(centerXY(0), stageSizeXY(0))
-    val yAxisNums = graphing(yAxisNum)(centerXY(1), stageSizeXY(1))
-    val xSubAxis = grid(xAxisRec)(centerXY(1), stageSizeXY(1))
-    val ySubAxis = grid(yAxisRec)(centerXY(0), stageSizeXY(0))
+    val xMainAxis = xAxisRec(centerDraggedXY(1), gridThickness, gridColor)
+    val yMainAxis = yAxisRec(centerDraggedXY(0), gridThickness, gridColor)
+    val xAxisNums = graphing(xAxisNum)(centerDraggedXY(0), stageSizeXY(0))
+    val yAxisNums = graphing(yAxisNum)(centerDraggedXY(1), stageSizeXY(1))
+    val xSubAxis = grid(xAxisRec)(centerDraggedXY(1), stageSizeXY(1))
+    val ySubAxis = grid(yAxisRec)(centerDraggedXY(0), stageSizeXY(0))
     new Group(xSubAxis, ySubAxis, xMainAxis, yMainAxis, xAxisNums, yAxisNums)
 
   // templates for grid lines along the x and y Axis
-
   private def xAxisRec(yValue: Double, thickness: Double, color: Color) = {
     new Rectangle {
       x = 0
@@ -55,23 +50,23 @@ class Grid(
     var step = stepFinder / 2
     var graph = new Group()
     def addShapes(addSub: (Double, Double) => Double) =
-      var point: Double = if (center - step < border * 2) addSub(center, step) else center % border + border
-      var location = stepEval(point, center)
+      var point: Double = addSub(center, step) // if (center - step < border * 2) addSub(center, step) else center % border + border
+      var value = stepEval(point, center)
       var opacity = 0.2
       def updateOpacity = opacity = if(opacity == 0.2) 0.5 else  0.2
-      while (location > border)
+      while (value > border)
         point -= step
-        location = stepEval(point, center)
+        value = stepEval(point, center)
         updateOpacity
-      while (location < 0)
+      while (value < 0)
         point += step
-        location = stepEval(point, center)
+        value = stepEval(point, center)
         updateOpacity
-      while (location <= border && location >= 0) {
+      while (value <= border && value >= 0) {
         graph.children.add(shaper(stepEval(point, center), thickness, gridColor.opacity(opacity)))
         updateOpacity
         point = addSub(point, step)
-        location = stepEval(point, center)
+        value = stepEval(point, center)
       }
     addShapes((a, b) => a + b)
     addShapes((a, b) => a - b)
@@ -83,10 +78,10 @@ class Grid(
     new Text {
       x = xValue - 50
       y =
-        if (centerXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
-        else if (centerXY(1) > stageSizeXY(1) - textDistanceFromBorder - 45)
+        if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
+        else if (centerDraggedXY(1) > stageSizeXY(1) - textDistanceFromBorder - 45)
           stageSizeXY(1) - 36 - textDistanceFromBorder
-        else centerXY(1) + 10
+        else centerDraggedXY(1) + 10
       text = "%.2f".format(-num).toDouble.toString // String.format("%2.1e",num)
       textOrigin = Center
       wrappingWidth = 100
@@ -98,9 +93,9 @@ class Grid(
   private def yAxisNum(yValue: Double, num: Double) = {
     new Text {
       x =
-        if (centerXY(0) - 20 < 0) -80
-        else if (centerXY(0) > stageSizeXY(0)) stageSizeXY(0) - 115
-        else centerXY(0) - 105
+        if (centerDraggedXY(0) - 20 < 0) -80
+        else if (centerDraggedXY(0) > stageSizeXY(0)) stageSizeXY(0) - 115
+        else centerDraggedXY(0) - 105
       y = yValue
       text = "%.2f".format(num).toDouble.toString // String.format("%2.1e",num)
       textOrigin = Center
@@ -114,18 +109,18 @@ class Grid(
     var step = stepFinder
     var graph = new Group()
     def addShapes(addSub: (Double, Double) => Double) =
-      var point: Double = if (center - step < border * 2) addSub(center, step) else center % border + border
-      var location = stepEval(point, center)
-      while (location > border)
+      var point: Double = addSub(center, step)
+      var value = stepEval(point, center)
+      while (value > border)
         point -= step
-        location = stepEval(point, center)
-      while (location < 0)
+        value = stepEval(point, center)
+      while (value < 0)
         point += step
-        location = stepEval(point, center)
-      while (location <= border && location >= 0) {
-        graph.children.add(shaper(location, (center - point) / 100))
+        value = stepEval(point, center)
+      while (value <= border && value >= 0) {
+        graph.children.add(shaper(value, (center - point) / 100))
         point = addSub(point, step)
-        location = stepEval(point, center)
+        value = stepEval(point, center)
       }
     addShapes((a, b) => a + b)
     addShapes((a, b) => a - b)
@@ -139,13 +134,15 @@ class Grid(
     var tempZoom = zoom
     val low = 75
     val high = 150
-    while (tempZoom < low)
-      tempZoom *= 2; step *= 2
-      if (tempZoom < low) { tempZoom *= 2.5; step *= 2.5 }
-      if (tempZoom < low) { tempZoom *= 2; step *= 2 }
-    while (tempZoom > high)
-      tempZoom /= 2; step /= 2
-      if (tempZoom > high) { tempZoom /= 2.5; step /= 2.5 }
-      if (tempZoom > high) { tempZoom /= 2; step /= 2 }
+    def multDivStepZoom(multDiv: (Double, Double) => Double, fac: Double) = {tempZoom = multDiv(tempZoom, fac); step = multDiv(step, fac)}
+    def zoomInOut(greaterLess: (Double,Double) => Boolean, lowHigh: Double, multDiv: (Double, Double) => Double) =
+      while (greaterLess(tempZoom, lowHigh))
+        multDivStepZoom(multDiv, 2)
+        if (greaterLess(tempZoom, lowHigh)) {multDivStepZoom(multDiv, 2.5)}
+        if (greaterLess(tempZoom, lowHigh)) {multDivStepZoom(multDiv, 2)}
+    if (tempZoom < low)
+      zoomInOut((a,b) => a < b, low, (a,b) => a * b)
+    else if (tempZoom > high)
+      zoomInOut((a,b) => a > b, high, (a,b) => a / b)
     step
   }
