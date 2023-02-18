@@ -105,28 +105,39 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     }
   }
 
+  // private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
+  //   var step = stepFinder
+  //   var graph = new Group()
+  //   def addShapes(addSub: (Double, Double) => Double) =
+  //     var point: Double = addSub(center, step)
+  //     var value = stepEval(point, center)
+  //     while (value > border)
+  //       point -= step
+  //       value = stepEval(point, center)
+  //     while (value < 0)
+  //       point += step
+  //       value = stepEval(point, center)
+  //     while (value <= border && value >= 0) {
+  //       graph.children.add(shaper(value, (center - point) / 100))
+  //       point = addSub(point, step)
+  //       value = stepEval(point, center)
+  //     }
+  //   addShapes((a, b) => a + b)
+  //   addShapes((a, b) => a - b)
+  //   graph
+  // }
+
   private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
-    var step = stepFinder
+    var stepSize = stepFinder
     var graph = new Group()
-    def addShapes(addSub: (Double, Double) => Double) =
-      var point: Double = addSub(center, step)
-      var value = stepEval(point, center)
-      while (value > border)
-        point -= step
-        value = stepEval(point, center)
-      while (value < 0)
-        point += step
-        value = stepEval(point, center)
-      while (value <= border && value >= 0) {
-        graph.children.add(shaper(value, (center - point) / 100))
-        point = addSub(point, step)
-        value = stepEval(point, center)
-      }
-    addShapes((a, b) => a + b)
-    addShapes((a, b) => a - b)
+    def addShapes(minMax: (Double,Double) => Double, bound: Double, step: Int) =
+      for (screenPixel <- minMax(bound,step).toInt to bound.toInt by step)
+        graph.children.add(shaper(screenPixel, -(screenPixel-center.toInt)*zoom/10000))
+    addShapes((bound,step) => (center+step).max(center+step*(-center/step).floor), border, 100)
+    addShapes((bound,step) => (center+step).min(center+step*((center-bound)/step).floor), 0, -100) //!care step = -100!
     graph
   }
-
+  
   private def stepEval(point: Double, center: Double) = ((point - center) * (zoom / 100) + center).toInt
 
   private def stepFinder = {

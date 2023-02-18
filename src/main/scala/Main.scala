@@ -50,8 +50,8 @@ object MainWindow extends JFXApp3 {
     for (i <- 1 to 100)
       update()
     initMouseAction()
-    stage.width.onChange(update())
-    stage.height.onChange(update())
+    // stage.width.onChange(update())
+    // stage.height.onChange(update())
 
     // loop to update image
     // loop(() => {frame.update(frame.value + 1); update()})
