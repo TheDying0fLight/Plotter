@@ -79,9 +79,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       x = xValue - 50
       y =
         if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
-        else if (centerDraggedXY(1) > stageSizeXY(1) - textDistanceFromBorder - 45)
-          stageSizeXY(1) - 36 - textDistanceFromBorder
-        else centerDraggedXY(1) + 10
+        else (stageSizeXY(1) - 36 - textDistanceFromBorder).toDouble.min(centerDraggedXY(1) + 10)
       text = "%.2f".format(-num).toDouble.toString // String.format("%2.1e",num)
       textOrigin = Center
       wrappingWidth = 100
@@ -94,8 +92,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     new Text {
       x =
         if (centerDraggedXY(0) - 20 < 0) -80
-        else if (centerDraggedXY(0) > stageSizeXY(0)) stageSizeXY(0) - 115
-        else centerDraggedXY(0) - 105
+        else (stageSizeXY(0) - 115).toDouble.min(centerDraggedXY(0) - 105)
       y = yValue
       text = "%.2f".format(num).toDouble.toString // String.format("%2.1e",num)
       textOrigin = Center
@@ -128,13 +125,15 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   // }
 
   private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
-    var stepSize = stepFinder
+    var step = stepFinder
     var graph = new Group()
-    def addShapes(minMax: (Double,Double) => Double, bound: Double, step: Int) =
-      for (screenPixel <- minMax(bound,step).toInt to bound.toInt by step)
-        graph.children.add(shaper(screenPixel, -(screenPixel-center.toInt)*zoom/10000))
-    addShapes((bound,step) => (center+step).max(center+step*(-center/step).floor), border, 100)
-    addShapes((bound,step) => (center+step).min(center+step*((center-bound)/step).floor), 0, -100) //!care step = -100!
+    def addShapes(addSub: (Double, Double) => Double, greaterLess: (Double,Double) => Boolean, minMax: (Double,Double) => Double, bound: Double) =
+      var screenPixel = minMax(bound,step)
+      while (greaterLess(screenPixel, bound))
+        graph.children.add(shaper(center+(screenPixel-center)*(zoom/100), -(screenPixel-center)/100))
+        screenPixel = addSub(screenPixel, step)
+    addShapes((a,b) => a + b, (a,b) => a < b, (bound,step) => (center+step).max(center+step*(-center/step).floor), border)
+    addShapes((a,b) => a - b, (a,b) => a > b, (bound,step) => (center-step).min(center-step*((bound-center)/step).floor), 0)
     graph
   }
   
