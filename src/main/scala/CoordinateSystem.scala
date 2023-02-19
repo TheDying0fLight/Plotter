@@ -47,31 +47,53 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
 
   private def grid(shaper: (Double, Double,Color) => Node)(center: Double, border: Double) = {
     var thickness = gridThickness / 2
-    var step = stepFinder / 2
+    var opacity = 0.2
+    var step = stepFinder
     var graph = new Group()
-    def addShapes(addSub: (Double, Double) => Double) =
-      var point: Double = addSub(center, step) // if (center - step < border * 2) addSub(center, step) else center % border + border
+    val stepDist = stepEval(step, 0)
+    val highStart = (center-step).min(center-step*(((center-border)/stepDist).ceil))
+    val lowStart = (center+step).max(center-step*((center/stepDist).ceil))
+    def addShapes(addSub: (Double, Double) => Double, start: Double) =
+      var point: Double = start
       var value = stepEval(point, center)
-      var opacity = 0.2
-      def updateOpacity = opacity = if(opacity == 0.2) 0.5 else  0.2
-      while (value > border)
-        point -= step
-        value = stepEval(point, center)
-        updateOpacity
-      while (value < 0)
-        point += step
-        value = stepEval(point, center)
-        updateOpacity
       while (value <= border && value >= 0) {
-        graph.children.add(shaper(stepEval(point, center), thickness, gridColor.opacity(opacity)))
-        updateOpacity
+        graph.children.add(shaper(value, thickness, gridColor.opacity(opacity)))
         point = addSub(point, step)
         value = stepEval(point, center)
       }
-    addShapes((a, b) => a + b)
-    addShapes((a, b) => a - b)
+    addShapes((a, b) => a + b, lowStart)
+    addShapes((a, b) => a - b, highStart)
     graph
   }
+
+
+  // private def grid(shaper: (Double, Double,Color) => Node)(center: Double, border: Double) = {
+  //   var thickness = gridThickness / 2
+  //   var step = stepFinder / 2
+  //   var graph = new Group()
+  //   def addShapes(addSub: (Double, Double) => Double) =
+  //     var point: Double = addSub(center, step) // if (center - step < border * 2) addSub(center, step) else center % border + border
+  //     var value = stepEval(point, center)
+  //     var opacity = 0.2
+  //     def updateOpacity = opacity = if(opacity == 0.2) 0.5 else  0.2
+  //     while (value > border)
+  //       point -= step
+  //       value = stepEval(point, center)
+  //       updateOpacity
+  //     while (value < 0)
+  //       point += step
+  //       value = stepEval(point, center)
+  //       updateOpacity
+  //     while (value <= border && value >= 0) {
+  //       graph.children.add(shaper(stepEval(point, center), thickness, gridColor.opacity(opacity)))
+  //       updateOpacity
+  //       point = addSub(point, step)
+  //       value = stepEval(point, center)
+  //     }
+  //   addShapes((a, b) => a + b)
+  //   addShapes((a, b) => a - b)
+  //   graph
+  // }
 
   // templates for numbers on x and y Axis
   private def xAxisNum(xValue: Double, num: Double) = {
@@ -120,28 +142,6 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     addShapes((a, b) => a - b, highStart)
     graph
   }
-
-  // private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
-  //   var step = stepFinder
-  //   var graph = new Group()
-  //   def addShapes(addSub: (Double, Double) => Double) =
-  //     var point: Double = addSub(center, step)
-  //     var value = stepEval(point, center)
-  //     while (value > border)
-  //       point -= step
-  //       value = stepEval(point, center)
-  //     while (value < 0)
-  //       point += step
-  //       value = stepEval(point, center)
-  //     while (value <= border && value >= 0) {
-  //       graph.children.add(shaper(value, (center - point) / 100))
-  //       point = addSub(point, step)
-  //       value = stepEval(point, center)
-  //     }
-  //   addShapes((a, b) => a + b)
-  //   addShapes((a, b) => a - b)
-  //   graph
-  // }
 
   /*private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
     var step = stepFinder
