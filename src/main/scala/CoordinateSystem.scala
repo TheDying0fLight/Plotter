@@ -102,6 +102,25 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     }
   }
 
+  private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
+    var step = stepFinder
+    var graph = new Group()
+    def addShapes(addSub: (Double, Double) => Double, start: Double) =
+      var point: Double = start
+      var value = stepEval(point, center)
+      while (value <= border && value >= 0) {
+        graph.children.add(shaper(value, (center-point) / 100))
+        point = addSub(point, step)
+        value = stepEval(point, center)
+      }
+    val stepDist = stepEval(step, 0)
+    val highStart = (center-step).min(center-step*(((center-border)/stepDist).ceil))
+    val lowStart = (center+step).max(center-step*((center/stepDist).ceil))
+    addShapes((a, b) => a + b, lowStart)
+    addShapes((a, b) => a - b, highStart)
+    graph
+  }
+
   // private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
   //   var step = stepFinder
   //   var graph = new Group()
@@ -124,18 +143,26 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   //   graph
   // }
 
-  private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
+  /*private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
     var step = stepFinder
     var graph = new Group()
-    def addShapes(addSub: (Double, Double) => Double, greaterLess: (Double,Double) => Boolean, minMax: (Double,Double) => Double, bound: Double) =
-      var screenPixel = minMax(bound,step)
-      while (greaterLess(screenPixel, bound))
-        graph.children.add(shaper(center+(screenPixel-center)*(zoom/100), -(screenPixel-center)/100))
-        screenPixel = addSub(screenPixel, step)
-    addShapes((a,b) => a + b, (a,b) => a < b, (bound,step) => (center+step).max(center+step*(-center/step).floor), border)
-    addShapes((a,b) => a - b, (a,b) => a > b, (bound,step) => (center-step).min(center-step*((bound-center)/step).floor), 0)
+    def translateToScreenPixel(point: Double) = center+(point-center)*(zoom/100)
+    val stepDist = (translateToScreenPixel(center) - translateToScreenPixel(center+step))
+    def addShapes(addSub: (Double, Double) => Double, greaterLess: (Double,Double) => Boolean, start: Double, bound: Double) =
+      var pointUntranslated = start
+      var pointTranslated = translateToScreenPixel(pointUntranslated)
+      while (greaterLess(pointTranslated, bound))
+        graph.children.add(shaper(pointTranslated, -(pointUntranslated-center)/100))
+        pointUntranslated = addSub(pointUntranslated, step)
+        pointTranslated = translateToScreenPixel(pointUntranslated)
+    //def findHighStart = (center-step).min(center-(step*((0-center)/step)).floor)
+    //def findLowStart = (center+step).max(center+step*(-center/step).floor)
+    val highStart = (center-step).min(center-step*(-center/stepDist).floor)
+    val lowStart = (center+step).max(center+step*(-center/stepDist).floor)
+    addShapes((a,b) => a + b, (drawPoint,bound) => drawPoint < bound, lowStart, border)
+    addShapes((a,b) => a - b, (drawPoint,bound) => drawPoint > bound, highStart, 0)
     graph
-  }
+  }*/
   
   private def stepEval(point: Double, center: Double) = ((point - center) * (zoom / 100) + center).toInt
 
@@ -144,7 +171,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     var tempZoom = zoom
     val low = 75
     val high = 150
-    def multDivStepZoom(multDiv: (Double, Double) => Double, fac: Double) = {tempZoom = multDiv(tempZoom, fac); step = multDiv(step, fac)}
+    def multDivStepZoom(multDiv: (Double, Double) => Double, fac: Double) = {tempZoom = multDiv(tempZoom.toDouble, fac); step = multDiv(step, fac)}
     def zoomInOut(greaterLess: (Double,Double) => Boolean, lowHigh: Double, multDiv: (Double, Double) => Double) =
       while (greaterLess(tempZoom, lowHigh))
         multDivStepZoom(multDiv, 2)

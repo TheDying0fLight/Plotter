@@ -21,6 +21,7 @@ import net.objecthunter.exp4j.ExpressionBuilder
 import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.shape.Polyline
 import scalafx.scene.text.Text
+import java.math.MathContext
 
 object MainWindow extends JFXApp3 {
   var centerDragged: (Double, Double) = (0, 0)
@@ -63,29 +64,29 @@ object MainWindow extends JFXApp3 {
       var e = new ExpressionBuilder(fun).variable("x").build()
       var poly = new Polyline { stroke = c; strokeWidth = th }
       for (i <- 0 to stageSizeXY(0))
-        e.setVariable("x", (i - centerDragged(0)) / zoom)
+        e.setVariable("x", ((i - centerDragged(0)) / zoom).toDouble)
         var temp = -(e.evaluate() * zoom) + centerDragged(1)
-        poly.getPoints().addAll(i.toDouble, temp)
+        poly.getPoints().addAll(i.toDouble, temp.toDouble)
       graph.children.add(poly)
     )
     graph
   }
 
-  val grid = Grid(centerDragged, stageSizeXY, zoom)
+  var drag: (Double, Double) = (0, 0)
+  var zoom: Double = 100
+  val zoomSpeed = 2
+
+  val grid = Grid(centerDragged, stageSizeXY, zoom.toDouble)
   val functs = List(("x^2", Blue, 3), ("x", Red, 2))
 
   // generating the image
   def image =
     val zoomText = new Text {
-      x = 10; y = 15; text = s"Zoom: ${zoom.toString()}%"
+      x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()}%"
     }
     grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY;
-    grid.zoom = zoom
+    grid.zoom = zoom.toDouble
     new Group(grid.getCoordinateSystem, evalFun(functs), zoomText)
-
-  var drag: (Double, Double) = (0, 0)
-  var zoom: Double = 100
-  val zoomSpeed = 2
 
   def initMouseAction() = {
     var anchorPt: (Double, Double) = (0, 0)
