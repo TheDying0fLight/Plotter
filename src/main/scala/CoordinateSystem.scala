@@ -10,6 +10,7 @@ import scalafx.geometry.VPos._
 import scalafx.scene.text._
 import scalafx.scene.paint.PaintIncludes.jfxColor2sfx
 import java.math.MathContext
+import java.math._
 
 class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), var zoom: Double):
   var gridColor = Black
@@ -97,13 +98,17 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   // }
 
   // templates for numbers on x and y Axis
+  private def beautify(num: Double) =
+    if ((num%1).abs > 0) BigDecimal(num, new MathContext(4)).stripTrailingZeros().toString
+    else BigDecimal(num, new MathContext(5)).toString
+
   private def xAxisNum(xValue: Double, num: Double) = {
     new Text {
       x = xValue - 50
       y =
         if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
         else (stageSizeXY(1) - 36 - textDistanceFromBorder).toDouble.min(centerDraggedXY(1) + 10)
-      text = BigDecimal(num, new MathContext(3)).toString
+      text = beautify(-num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Center
@@ -117,7 +122,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
         if (centerDraggedXY(0) - 20 < 0) -80
         else (stageSizeXY(0) - 115).toDouble.min(centerDraggedXY(0) - 105)
       y = yValue
-      text = BigDecimal(num, new MathContext(3)).toString
+      text = beautify(num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Right
@@ -132,7 +137,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       var point: Double = start
       var value = stepEval(point, center)
       while (value <= border && value >= 0) {
-        graph.children.add(shaper(value, (center-point) / 100))
+        graph.children.add(shaper(value, (center.floor-point.floor) / 100))
         point = addSub(point, step)
         value = stepEval(point, center)
       }
@@ -143,27 +148,6 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     addShapes((a, b) => a - b, highStart)
     graph
   }
-
-  /*private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
-    var step = stepFinder
-    var graph = new Group()
-    def translateToScreenPixel(point: Double) = center+(point-center)*(zoom/100)
-    val stepDist = (translateToScreenPixel(center) - translateToScreenPixel(center+step))
-    def addShapes(addSub: (Double, Double) => Double, greaterLess: (Double,Double) => Boolean, start: Double, bound: Double) =
-      var pointUntranslated = start
-      var pointTranslated = translateToScreenPixel(pointUntranslated)
-      while (greaterLess(pointTranslated, bound))
-        graph.children.add(shaper(pointTranslated, -(pointUntranslated-center)/100))
-        pointUntranslated = addSub(pointUntranslated, step)
-        pointTranslated = translateToScreenPixel(pointUntranslated)
-    //def findHighStart = (center-step).min(center-(step*((0-center)/step)).floor)
-    //def findLowStart = (center+step).max(center+step*(-center/step).floor)
-    val highStart = (center-step).min(center-step*(-center/stepDist).floor)
-    val lowStart = (center+step).max(center+step*(-center/stepDist).floor)
-    addShapes((a,b) => a + b, (drawPoint,bound) => drawPoint < bound, lowStart, border)
-    addShapes((a,b) => a - b, (drawPoint,bound) => drawPoint > bound, highStart, 0)
-    graph
-  }*/
   
   private def stepEval(point: Double, center: Double) = ((point - center) * (zoom / 100) + center).toInt
 
