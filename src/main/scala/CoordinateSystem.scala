@@ -137,7 +137,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       var point: Double = start
       var value = stepEval(point, center)
       while (value <= border && value >= 0) {
-        graph.children.add(shaper(value, ((center.toInt-point.toInt)/100).toInt))
+        graph.children.add(shaper(value, ((center-point)/100).toInt))
         point = addSub(point, step)
         value = stepEval(point, center)
       }
@@ -148,27 +148,6 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     addShapes((a, b) => a - b, highStart)
     graph
   }
-
-  /*private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
-    var step = stepFinder
-    var graph = new Group()
-    def translateToScreenPixel(point: Double) = center+(point-center)*(zoom/100)
-    val stepDist = (translateToScreenPixel(center) - translateToScreenPixel(center+step))
-    def addShapes(addSub: (Double, Double) => Double, greaterLess: (Double,Double) => Boolean, start: Double, bound: Double) =
-      var pointUntranslated = start
-      var pointTranslated = translateToScreenPixel(pointUntranslated)
-      while (greaterLess(pointTranslated, bound))
-        graph.children.add(shaper(pointTranslated, -(pointUntranslated-center)/100))
-        pointUntranslated = addSub(pointUntranslated, step)
-        pointTranslated = translateToScreenPixel(pointUntranslated)
-    //def findHighStart = (center-step).min(center-(step*((0-center)/step)).floor)
-    //def findLowStart = (center+step).max(center+step*(-center/step).floor)
-    val highStart = (center-step).min(center-step*(-center/stepDist).floor)
-    val lowStart = (center+step).max(center+step*(-center/stepDist).floor)
-    addShapes((a,b) => a + b, (drawPoint,bound) => drawPoint < bound, lowStart, border)
-    addShapes((a,b) => a - b, (drawPoint,bound) => drawPoint > bound, highStart, 0)
-    graph
-  }*/
   
   private def stepEval(point: Double, center: Double) = ((point - center) * (zoom / 100) + center).toInt
 
