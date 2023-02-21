@@ -68,37 +68,8 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     graph
   }
 
-
-  // private def grid(shaper: (Double, Double,Color) => Node)(center: Double, border: Double) = {
-  //   var thickness = gridThickness / 2
-  //   var step = stepFinder / 2
-  //   var graph = new Group()
-  //   def addShapes(addSub: (Double, Double) => Double) =
-  //     var point: Double = addSub(center, step) // if (center - step < border * 2) addSub(center, step) else center % border + border
-  //     var value = stepEval(point, center)
-  //     var opacity = 0.2
-  //     def updateOpacity = opacity = if(opacity == 0.2) 0.5 else  0.2
-  //     while (value > border)
-  //       point -= step
-  //       value = stepEval(point, center)
-  //       updateOpacity
-  //     while (value < 0)
-  //       point += step
-  //       value = stepEval(point, center)
-  //       updateOpacity
-  //     while (value <= border && value >= 0) {
-  //       graph.children.add(shaper(stepEval(point, center), thickness, gridColor.opacity(opacity)))
-  //       updateOpacity
-  //       point = addSub(point, step)
-  //       value = stepEval(point, center)
-  //     }
-  //   addShapes((a, b) => a + b)
-  //   addShapes((a, b) => a - b)
-  //   graph
-  // }
-
   // templates for numbers on x and y Axis
-  private def beautify(num: Double) =
+  private def beautifyNumber(num: Double) =
     if ((num%1).abs > 0 && zoom > 100) BigDecimal(num, new MathContext(4)).stripTrailingZeros().toString
     else BigDecimal(num.toInt, new MathContext(5)).toString
 
@@ -108,7 +79,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       y =
         if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
         else (stageSizeXY(1) - 36 - textDistanceFromBorder).toDouble.min(centerDraggedXY(1) + 10)
-      text = beautify(-num)
+      text = beautifyNumber(-num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Center
@@ -122,7 +93,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
         if (centerDraggedXY(0) - 20 < 0) -80
         else (stageSizeXY(0) - 115).toDouble.min(centerDraggedXY(0) - 105)
       y = yValue
-      text = beautify(num)
+      text = beautifyNumber(num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Right

@@ -30,8 +30,7 @@ object MainWindow extends JFXApp3 {
 
   def update() =
     Platform.runLater {
-      centerDragged =
-        (stage.width.value / 2 + drag(0), stage.height.value / 2 + drag(1))
+      centerDragged = (stage.width.value / 2 + drag(0), stage.height.value / 2 + drag(1))
       stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
       frame.update(frame.value + 1)
     }
@@ -51,8 +50,8 @@ object MainWindow extends JFXApp3 {
     for (i <- 1 to 100)
       update()
     initMouseAction()
-    // stage.width.onChange(update())
-    // stage.height.onChange(update())
+    stage.width.onChange(update())
+    stage.height.onChange(update())
 
     // loop to update image
     // loop(() => {frame.update(frame.value + 1); update()})
@@ -64,9 +63,9 @@ object MainWindow extends JFXApp3 {
       var e = new ExpressionBuilder(fun).variable("x").build()
       var poly = new Polyline { stroke = c; strokeWidth = th }
       for (i <- 0 to stageSizeXY(0))
-        e.setVariable("x", ((i - centerDragged(0)) / zoom).toDouble)
+        e.setVariable("x", ((i - centerDragged(0)) / zoom))
         var temp = -(e.evaluate() * zoom) + centerDragged(1)
-        poly.getPoints().addAll(i.toDouble, temp.toDouble)
+        poly.getPoints().addAll(i.toDouble, temp)
       graph.children.add(poly)
     )
     graph
@@ -76,17 +75,15 @@ object MainWindow extends JFXApp3 {
   var zoom: Double = 100
   val zoomSpeed = 2
 
-  val grid = Grid(centerDragged, stageSizeXY, zoom.toDouble)
-  val functs = List(("x^2", Blue, 3), ("x", Red, 2))
+  val grid = Grid(centerDragged, stageSizeXY, zoom)
+  val functs = List(("x^2", Blue, 3), ("x", Red, 2), ("sin(x^2)", Pink, 4))
 
   // generating the image
   def image =
-    val zoomText = new Text {
-      x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()}%"
-    }
+    val zoomText = new Text {x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()}%"}
     grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY;
-    grid.zoom = zoom.toDouble
-    new Group(grid.getCoordinateSystem, evalFun(functs), zoomText)
+    grid.zoom = zoom
+    new Group(evalFun(functs), grid.getCoordinateSystem, zoomText)
 
   def initMouseAction() = {
     var anchorPt: (Double, Double) = (0, 0)
