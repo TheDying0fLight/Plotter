@@ -98,9 +98,9 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   // }
 
   // templates for numbers on x and y Axis
-  private def beautifyNumber(num: Double) =
-    if((num%1).abs > 0 && num.toInt == 0) BigDecimal(num, new MathContext(6)).stripTrailingZeros 
-    else BigDecimal(num.toInt, new MathContext(4))
+  private def beautify(num: Double) =
+    if ((num%1).abs > 0 && zoom > 100) BigDecimal(num, new MathContext(4)).stripTrailingZeros().toString
+    else BigDecimal(num.toInt, new MathContext(5)).toString
 
   private def xAxisNum(xValue: Double, num: Double) = {
     new Text {
@@ -108,7 +108,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       y =
         if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
         else (stageSizeXY(1) - 36 - textDistanceFromBorder).toDouble.min(centerDraggedXY(1) + 10)
-      text = beautifyNumber(-num).toString
+      text = beautify(-num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Center
@@ -122,7 +122,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
         if (centerDraggedXY(0) - 20 < 0) -80
         else (stageSizeXY(0) - 115).toDouble.min(centerDraggedXY(0) - 105)
       y = yValue
-      text = (beautifyNumber(num)).toString
+      text = beautify(num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Right
@@ -137,13 +137,13 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       var point: Double = start
       var value = stepEval(point, center)
       while (value <= border && value >= 0) {
-        graph.children.add(shaper(value, ((center-point)/100).toInt))
+        graph.children.add(shaper(value, (center-point) / 100))
         point = addSub(point, step)
         value = stepEval(point, center)
       }
     val stepDist = stepEval(step, 0)
-    val highStart = (center-step-1).min(center-step*(((center-border)/stepDist).ceil)-1)
-    val lowStart = (center+step).max(center-step*((center/stepDist).floor)+1)
+    val highStart = (center-step).min(center-step*(((center-border)/stepDist).ceil))
+    val lowStart = (center+step).max(center-step*((center/stepDist).floor))
     addShapes((a, b) => a + b, lowStart)
     addShapes((a, b) => a - b, highStart)
     graph
