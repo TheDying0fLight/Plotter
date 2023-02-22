@@ -50,8 +50,8 @@ object MainWindow extends JFXApp3 {
     for (i <- 1 to 100)
       update()
     initMouseAction()
-    // stage.width.onChange(update())
-    // stage.height.onChange(update())
+    stage.width.onChange(update())
+    stage.height.onChange(update())
 
     // loop to update image
     // loop(() => {frame.update(frame.value + 1); update()})
@@ -103,7 +103,7 @@ object MainWindow extends JFXApp3 {
   def zoomer(event: ScrollEvent) = {
     var newZoom = (zoom + zoomSpeed * (event.deltaY * zoom / 100) / 10)
     if (newZoom > 1E10) newZoom = 1E10
-    else if (newZoom < 1E-10) newZoom = 1E-10
+    else if (newZoom < 1E-10) newZoom = 1E-7
     val zoomFactor = newZoom / zoom
     val relativeMousePosition =
       List(event.getX() - centerDragged(0), event.getY() - centerDragged(1))
