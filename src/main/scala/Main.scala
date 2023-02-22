@@ -101,20 +101,19 @@ object MainWindow extends JFXApp3 {
   }
 
   def zoomer(event: ScrollEvent) = {
-    val newZoom = (zoom + zoomSpeed * (event.deltaY * zoom / 100) / 10)
-    if (newZoom > 1E10) zoom = 1E10
-    else if (newZoom < 1E-10) zoom = 1E-10
-    else
-      val zoomFactor = newZoom / zoom
-      val relativeMousePosition =
-        List(event.getX() - centerDragged(0), event.getY() - centerDragged(1))
-      val newRelativeMousePosition =
-        relativeMousePosition.map(x => x * zoomFactor)
-      drag = (
-        drag(0) + relativeMousePosition(0) - newRelativeMousePosition(0),
-        drag(1) + relativeMousePosition(1) - newRelativeMousePosition(1)
-      )
-      zoom = newZoom
+    var newZoom = (zoom + zoomSpeed * (event.deltaY * zoom / 100) / 10)
+    if (newZoom > 1E10) newZoom = 1E10
+    else if (newZoom < 1E-10) newZoom = 1E-10
+    val zoomFactor = newZoom / zoom
+    val relativeMousePosition =
+      List(event.getX() - centerDragged(0), event.getY() - centerDragged(1))
+    val newRelativeMousePosition =
+      relativeMousePosition.map(x => x * zoomFactor)
+    drag = (
+      drag(0) + relativeMousePosition(0) - newRelativeMousePosition(0),
+      drag(1) + relativeMousePosition(1) - newRelativeMousePosition(1)
+    )
+    zoom = newZoom
     update()
   }
 

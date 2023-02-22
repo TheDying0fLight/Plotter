@@ -77,7 +77,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       y =
         if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
         else (stageSizeXY(1) - 36 - textDistanceFromBorder).toDouble.min(centerDraggedXY(1) + 10)
-      text = (-num).toString //beautifyNumber(-num)
+      text = beautifyNumber(-num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Center
@@ -106,7 +106,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     def addShapes(addSub: (Double, Double) => Double, start: Double) =
       var point: Double = start
       while (point <= border && point >= 0) {
-        graph.children.add(shaper(point, addSub(center-point, -0.0000001/(zoom/100))/zoom)) //the addSub is for double Precision fix
+        graph.children.add(shaper(point, addSub(center-point, -0.0000001)/zoom)) //the addSub is for double Precision fix
         point = addSub(point, stepDist)
       }
     val highStart = (center-stepDist).min(center-stepDist*(((center-border)/stepDist).ceil))
