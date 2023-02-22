@@ -30,7 +30,7 @@ object MainWindow extends JFXApp3 {
 
   def update() =
     Platform.runLater {
-      centerDragged = (stage.width.value / 2 + drag(0), stage.height.value / 2 + drag(1))
+      centerDragged = (stage.width.value / 2 + drag(0).toDouble, stage.height.value / 2 + drag(1).toDouble)
       stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
       frame.update(frame.value + 1)
     }
@@ -50,8 +50,8 @@ object MainWindow extends JFXApp3 {
     for (i <- 1 to 100)
       update()
     initMouseAction()
-    stage.width.onChange(update())
-    stage.height.onChange(update())
+    // stage.width.onChange(update())
+    // stage.height.onChange(update())
 
     // loop to update image
     // loop(() => {frame.update(frame.value + 1); update()})
@@ -71,7 +71,7 @@ object MainWindow extends JFXApp3 {
     graph
   }
 
-  var drag: (Double, Double) = (0, 0)
+  var drag: (BigDecimal, BigDecimal) = (0, 0)
   var zoom: Double = 100
   val zoomSpeed = 2
 
@@ -80,7 +80,7 @@ object MainWindow extends JFXApp3 {
 
   // generating the image
   def image =
-    val zoomText = new Text {x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()}%"}
+    val zoomText = new Text {x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()} %"}
     grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY;
     grid.zoom = zoom
     new Group(evalFun(functs), grid.getCoordinateSystem, zoomText)
@@ -102,16 +102,19 @@ object MainWindow extends JFXApp3 {
 
   def zoomer(event: ScrollEvent) = {
     val newZoom = (zoom + zoomSpeed * (event.deltaY * zoom / 100) / 10)
-    val zoomFactor = newZoom / zoom
-    val relativeMousePosition =
-      List(event.getX() - centerDragged(0), event.getY() - centerDragged(1))
-    val newRelativeMousePosition =
-      relativeMousePosition.map(x => x * zoomFactor)
-    drag = (
-      drag(0) + relativeMousePosition(0) - newRelativeMousePosition(0),
-      drag(1) + relativeMousePosition(1) - newRelativeMousePosition(1)
-    )
-    zoom = newZoom
+    if (newZoom > 1E10) zoom = 1E10
+    else if (newZoom < 1E-10) zoom = 1E-10
+    else
+      val zoomFactor = newZoom / zoom
+      val relativeMousePosition =
+        List(event.getX() - centerDragged(0), event.getY() - centerDragged(1))
+      val newRelativeMousePosition =
+        relativeMousePosition.map(x => x * zoomFactor)
+      drag = (
+        drag(0) + relativeMousePosition(0) - newRelativeMousePosition(0),
+        drag(1) + relativeMousePosition(1) - newRelativeMousePosition(1)
+      )
+      zoom = newZoom
     update()
   }
 

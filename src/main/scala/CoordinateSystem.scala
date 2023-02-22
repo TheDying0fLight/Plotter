@@ -53,16 +53,14 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     var step = stepFinder
     var graph = new Group()
     val stepDist = stepEval(step, 0)
-    val highStart = (center-step).min(center-step*(((center-border)/stepDist).ceil))
-    val lowStart = (center+step).max(center-step*((center/stepDist).floor))
     def addShapes(addSub: (Double, Double) => Double, start: Double) =
       var point: Double = start
-      var value = stepEval(point, center)
-      while (value <= border && value >= 0) {
-        graph.children.add(shaper(value, thickness, gridColor.opacity(opacity)))
-        point = addSub(point, step)
-        value = stepEval(point, center)
+      while (point <= border && point >= 0) {
+        graph.children.add(shaper(point, thickness, gridColor.opacity(opacity)))
+        point = addSub(point, stepDist)
       }
+    val highStart = (center-stepDist).min(center-stepDist*(((center-border)/stepDist).ceil))
+    val lowStart = (center+stepDist).max(center-stepDist*((center/stepDist).floor))
     addShapes((a, b) => a + b, lowStart)
     addShapes((a, b) => a - b, highStart)
     graph
@@ -70,7 +68,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
 
   // templates for numbers on x and y Axis
   private def beautifyNumber(num: Double) =
-    if ((num%1).abs > 0 && zoom > 100) BigDecimal(num, new MathContext(4)).stripTrailingZeros().toString
+    if ((num%1).abs > 0 && zoom > 100) BigDecimal(num, new MathContext(7)).stripTrailingZeros().toString
     else BigDecimal(num.toInt, new MathContext(5)).toString
 
   private def xAxisNum(xValue: Double, num: Double) = {
@@ -79,7 +77,7 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
       y =
         if (centerDraggedXY(1) < textDistanceFromBorder - 10) textDistanceFromBorder
         else (stageSizeXY(1) - 36 - textDistanceFromBorder).toDouble.min(centerDraggedXY(1) + 10)
-      text = beautifyNumber(-num)
+      text = (-num).toString //beautifyNumber(-num)
       textOrigin = Center
       wrappingWidth = 100
       textAlignment = TextAlignment.Center
@@ -104,23 +102,21 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
     var step = stepFinder
     var graph = new Group()
+    val stepDist = stepEval(step, 0)
     def addShapes(addSub: (Double, Double) => Double, start: Double) =
       var point: Double = start
-      var value = stepEval(point, center)
-      while (value <= border && value >= 0) {
-        graph.children.add(shaper(value, (center-point) / 100))
-        point = addSub(point, step)
-        value = stepEval(point, center)
+      while (point <= border && point >= 0) {
+        graph.children.add(shaper(point, addSub(center-point, -0.0000001/(zoom/100))/zoom)) //the addSub is for double Precision fix
+        point = addSub(point, stepDist)
       }
-    val stepDist = stepEval(step, 0)
-    val highStart = (center-step).min(center-step*(((center-border)/stepDist).ceil))
-    val lowStart = (center+step).max(center-step*((center/stepDist).floor))
+    val highStart = (center-stepDist).min(center-stepDist*(((center-border)/stepDist).ceil))
+    val lowStart = (center+stepDist).max(center-stepDist*((center/stepDist).floor))
     addShapes((a, b) => a + b, lowStart)
     addShapes((a, b) => a - b, highStart)
     graph
   }
   
-  private def stepEval(point: Double, center: Double) = ((point - center) * (zoom / 100) + center).toInt
+  private def stepEval(point: Double, center: Double) = ((point-center)*(zoom/100)+center)
 
   private def stepFinder = {
     var step = 100.toDouble
