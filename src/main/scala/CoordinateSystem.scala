@@ -20,11 +20,30 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   def getCoordinateSystem =
     val xMainAxis = xAxisRec(centerDraggedXY(1), gridThickness, gridColor)
     val yMainAxis = yAxisRec(centerDraggedXY(0), gridThickness, gridColor)
-    val xAxisNums = graphing(xAxisNum)(centerDraggedXY(0), stageSizeXY(0))
-    val yAxisNums = graphing(yAxisNum)(centerDraggedXY(1), stageSizeXY(1))
+    val xAxisNums = numbers(xAxisNum)(centerDraggedXY(0), stageSizeXY(0))
+    val yAxisNums = numbers(yAxisNum)(centerDraggedXY(1), stageSizeXY(1))
     val xSubAxis = grid(xAxisRec)(centerDraggedXY(1), stageSizeXY(1))
     val ySubAxis = grid(yAxisRec)(centerDraggedXY(0), stageSizeXY(0))
     new Group(xSubAxis, ySubAxis, xMainAxis, yMainAxis, xAxisNums, yAxisNums)
+
+  private def graphing(shape: (Double,Double,(Double, Double) => Double,Double,Double) => Node)(center: Double, border: Double) = {
+    var thickness = gridThickness / 2
+    var opacity = 0.2
+    var step = stepFinder
+    var graph = new Group()
+    val stepDist = (step*(zoom/100))
+    def addShapes(addSub: (Double, Double) => Double, start: Double) =
+      var point: Double = start
+      while (point <= border && point >= 0) {
+        graph.children.add(shape(point, center, addSub, thickness, opacity))
+        point = addSub(point, stepDist)
+      }
+    val highStart = (center-stepDist).min(center-stepDist*(((center-border)/stepDist).ceil))
+    val lowStart = (center+stepDist).max(center-stepDist*((center/stepDist).floor))
+    addShapes((a, b) => a + b, lowStart)
+    addShapes((a, b) => a - b, highStart)
+    graph
+  }
 
   // templates for grid lines along the x and y Axis
   private def xAxisRec(yValue: Double, thickness: Double, color: Color) = {
@@ -47,24 +66,8 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     }
   }
 
-  private def grid(shaper: (Double, Double,Color) => Node)(center: Double, border: Double) = {
-    var thickness = gridThickness / 2
-    var opacity = 0.2
-    var step = stepFinder
-    var graph = new Group()
-    val stepDist = stepEval(step, 0)
-    def addShapes(addSub: (Double, Double) => Double, start: Double) =
-      var point: Double = start
-      while (point <= border && point >= 0) {
-        graph.children.add(shaper(point, thickness, gridColor.opacity(opacity)))
-        point = addSub(point, stepDist)
-      }
-    val highStart = (center-stepDist).min(center-stepDist*(((center-border)/stepDist).ceil))
-    val lowStart = (center+stepDist).max(center-stepDist*((center/stepDist).floor))
-    addShapes((a, b) => a + b, lowStart)
-    addShapes((a, b) => a - b, highStart)
-    graph
-  }
+  private def grid(axisRec: (Double,Double,Color) => Node) =
+    graphing((point, _, _, thickness, opacity) => axisRec(point, thickness, gridColor.opacity(opacity)))
 
   // templates for numbers on x and y Axis
   private def beautifyNumber(num: Double) =
@@ -99,24 +102,8 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
     }
   }
 
-  private def graphing(shaper: (Double, Double) => Node)(center: Double, border: Double) = {
-    var step = stepFinder
-    var graph = new Group()
-    val stepDist = stepEval(step, 0)
-    def addShapes(addSub: (Double, Double) => Double, start: Double) =
-      var point: Double = start
-      while (point <= border && point >= 0) {
-        graph.children.add(shaper(point, addSub(center-point, -0.0000001)/zoom)) //the addSub is for double Precision fix
-        point = addSub(point, stepDist)
-      }
-    val highStart = (center-stepDist).min(center-stepDist*(((center-border)/stepDist).ceil))
-    val lowStart = (center+stepDist).max(center-stepDist*((center/stepDist).floor))
-    addShapes((a, b) => a + b, lowStart)
-    addShapes((a, b) => a - b, highStart)
-    graph
-  }
-  
-  private def stepEval(point: Double, center: Double) = ((point-center)*(zoom/100)+center)
+  private def numbers(axisNum: (Double,Double) => Node) = 
+    graphing((point, center, addSub, _, _) => axisNum(point, addSub(center-point, -0.0000001)/zoom))
 
   private def stepFinder = {
     var step = 100.toDouble
