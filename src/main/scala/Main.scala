@@ -22,6 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.shape.Polyline
 import scalafx.scene.text.Text
 import java.math.MathContext
+import javafx.scene.input.KeyCode
 
 object MainWindow extends JFXApp3 {
   var centerDragged: (Double, Double) = (0, 0)
@@ -47,14 +48,10 @@ object MainWindow extends JFXApp3 {
         frame.onChange(Platform.runLater { content = image })
       }
     }
-    for (i <- 1 to 100)
-      update()
-    initMouseAction()
+    update()
+    initAction()
     stage.width.onChange(update())
     stage.height.onChange(update())
-
-    // loop to update image
-    // loop(() => {frame.update(frame.value + 1); update()})
   }
 
   def evalFun(functions: List[(String, Color, Int)]) = {
@@ -81,11 +78,10 @@ object MainWindow extends JFXApp3 {
   // generating the image
   def image =
     val zoomText = new Text {x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()}%"}
-    grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY;
-    grid.zoom = zoom
+    grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY; grid.zoom = zoom
     new Group(evalFun(functs), grid.getCoordinateSystem, zoomText)
 
-  def initMouseAction() = {
+  def initAction() = {
     var anchorPt: (Double, Double) = (0, 0)
     val scene = stage.getScene()
     scene.onMousePressed = (event: MouseEvent) =>
@@ -98,6 +94,9 @@ object MainWindow extends JFXApp3 {
       anchorPt = (event.screenX, event.screenY)
       update()
     scene.onScroll = (event: ScrollEvent) => zoomer(event)
+    scene.setOnKeyPressed(e => {e.getCode() match
+      case KeyCode.F => ???
+      case _ => println("Button has no function")})
   }
 
   def zoomer(event: ScrollEvent) = {
@@ -113,13 +112,5 @@ object MainWindow extends JFXApp3 {
     )
     zoom = newZoom
     update()
-  }
-
-  // Repeating loop with short wait
-  def loop(update: () => Unit): Unit = {
-    Future {
-      update()
-      Thread.sleep(1000 / 60)
-    }.flatMap(_ => Future(loop(update)))
   }
 }
