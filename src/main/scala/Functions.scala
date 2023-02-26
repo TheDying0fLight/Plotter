@@ -19,13 +19,23 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
   def popUp = {
     val functionPopUp = new Dialog {title = "Function Input"}
 
+    var inputFields = ArrayBuffer[(TextField,Boolean)]()
+
     functionPopUp.getDialogPane().getButtonTypes().add(ButtonType("Done", ButtonData.OKDone))
   
-    var inputFields = ArrayBuffer[(TextField,Boolean)]()
+    val grid = new GridPane() {
+      hgap = 10
+      vgap = 10
+      padding = Insets(20, 100, 10, 10)
+    }
 
     def addInputField(function: String, color: Color, thickness: Int, index: Int): Unit =
       val field = new TextField{promptText = "Input a Function"; text = function}
-      field.text.onChange{(_, _, newValue) => 
+      if (index == functionList.length) functionList += ((function, color, thickness))
+      grid.add(new Label(s"f${index+1}:"), 0, index)
+      grid.add(field, 1, index)
+      functionPopUp.dialogPane().content = grid
+      field.text.onChange{(_, _, newValue) =>
         functionList(index) = (newValue, color, thickness)
         MainWindow.update
         if (inputFields(index)(1) && newValue != "")
@@ -35,36 +45,28 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
 
     functionList.zipWithIndex.foreach{case((function,color,thickness),index) =>
       addInputField(function, color, thickness, index)}
-  
-    val grid = new GridPane() {
-      hgap = 10
-      vgap = 10
-      padding = Insets(20, 100, 10, 10)
-    }
 
-    inputFields.zipWithIndex.foreach{case(field,index) =>
-      grid.add(new Label(s"f${index+1}:"), 0, index)
-      grid.add(field(0), 1, index)}
-
-    functionPopUp.dialogPane().content = grid
+    if (inputFields.length == 0) addInputField("", Blue, 2, inputFields.length)
+    functionPopUp.show()
   }
 
   def evalFunctions = {
     val graph = new Group()
     functionList.map((fun, c, th) =>
-      try
-        var e = new ExpressionBuilder(fun).variable("x").build()
-        var poly = new Polyline {stroke = c; strokeWidth = th}
-        for (i <- 0 to stageWidth)
-          e.setVariable("x", ((i-centerDragged(0)) / zoom))
-          try
-            var temp = -(e.evaluate() * zoom) + centerDragged(1)
-            poly.getPoints().addAll(i.toDouble, temp+th/2)
-          catch
-            case _ => {graph.children.add(poly); poly = new Polyline {stroke = c; strokeWidth = th}}
-        graph.children.add(poly)
-      catch
-        case _ => println("Error")
+      if (fun != "")
+        try
+          var e = new ExpressionBuilder(fun).variable("x").build()
+          var poly = new Polyline {stroke = c; strokeWidth = th}
+          for (i <- 0 to stageWidth)
+            e.setVariable("x", ((i-centerDragged(0)) / zoom))
+            try
+              var temp = -(e.evaluate() * zoom) + centerDragged(1)
+              poly.getPoints().addAll(i.toDouble, temp+th/2)
+            catch
+              case _ => {graph.children.add(poly); poly = new Polyline {stroke = c; strokeWidth = th}}
+          graph.children.add(poly)
+        catch
+          case _ => println("Error")
     )
     graph
   }
