@@ -10,39 +10,42 @@ import net.objecthunter.exp4j.ExpressionBuilder
 import scalafx.scene.shape.Polyline
 import scalafx.Includes._
 import scala.collection.mutable.ArrayBuffer
+import scalafx.scene.control.ButtonType
+import scalafx.scene.control.ButtonBar.ButtonData
 
 class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoom: Double):
   var functionList = ArrayBuffer[(String, Color, Int)]()
 
   def popUp = {
-    val functionPopUp = new Dialog() {
-      title = "Function Input"
-    }
+    val functionPopUp = new Dialog {title = "Function Input"}
+
+    functionPopUp.getDialogPane().getButtonTypes().add(ButtonType("Done", ButtonData.OKDone))
   
-    val prompt1 = new TextField() {
-      promptText = "Input a Function"
-      text = functionList(0)(0)
-    }
-  
-    val prompt2 = new TextField() {
-      promptText = "Input a Function"
-      text = functionList(1)(0)
-    }
+    var inputFields = ArrayBuffer[(TextField,Boolean)]()
+
+    def addInputField(function: String, color: Color, thickness: Int, index: Int): Unit =
+      val field = new TextField{promptText = "Input a Function"; text = function}
+      field.text.onChange{(_, _, newValue) => 
+        functionList(index) = (newValue, color, thickness)
+        MainWindow.update
+        if (inputFields(index)(1) && newValue != "")
+          inputFields(index) = (inputFields(index)(0),false)
+          addInputField("", Blue, 2, inputFields.length)}
+      inputFields += ((field,true))
+
+    functionList.zipWithIndex.foreach{case((function,color,thickness),index) =>
+      addInputField(function, color, thickness, index)}
   
     val grid = new GridPane() {
       hgap = 10
       vgap = 10
       padding = Insets(20, 100, 10, 10)
-  
-      add(new Label("f1:"), 0, 0)
-      add(prompt1, 1, 0)
-      add(new Label("f2:"), 0, 1)
-      add(prompt2, 1, 1)
     }
-  
-    prompt1.text.onChange {(_, _, newValue) => functionList(0) = (newValue, Green, 3); MainWindow.update}
-    prompt2.text.onChange {(_, _, newValue) => functionList(1) = (newValue, Blue, 2); MainWindow.update}
-  
+
+    inputFields.zipWithIndex.foreach{case(field,index) =>
+      grid.add(new Label(s"f${index+1}:"), 0, index)
+      grid.add(field(0), 1, index)}
+
     functionPopUp.dialogPane().content = grid
   }
 
