@@ -4,25 +4,18 @@ package plotter
 import scalafx.application.{JFXApp3, Platform}
 import scalafx.scene.Scene
 import scalafx.scene.paint.Color
-import scalafx.scene.paint.Color._
 import scalafx.beans.property.{IntegerProperty, ObjectProperty}
-import scala.concurrent.Future
 import scalafx.scene.Group
 
-//for mouse interaction
+//for interaction
 import scalafx.geometry.Point2D
 import scalafx.scene.input.MouseEvent
 import scalafx.scene.input.ScrollEvent
 import scalafx.stage.{WindowEvent, StageStyle}
 import scalafx.Includes._
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import net.objecthunter.exp4j.ExpressionBuilder
-import scala.collection.mutable.ArrayBuffer
-import scalafx.scene.shape.Polyline
+import javafx.scene.input.KeyCode
 import scalafx.scene.text.Text
 import java.math.MathContext
-import javafx.scene.input.KeyCode
 
 object MainWindow extends JFXApp3 {
   // Initalization of programm
@@ -34,40 +27,43 @@ object MainWindow extends JFXApp3 {
       scene = new Scene {
         title = "Plotter"
         fill = Color(0.95, 0.95, 0.95, 1)
-        frame.onChange(Platform.runLater { content = image })
+        frame.onChange(Platform.runLater { content = draw })
       }
     }
-    update()
+    update
     initAction()
-    stage.width.onChange(update())
-    stage.height.onChange(update())
+    stage.width.onChange(update)
+    stage.height.onChange(update)
   }
 
   var centerDragged: (Double, Double) = (0, 0)
   var stageSizeXY = (0, 0)
   val frame = IntegerProperty(0)
 
-  def update() =
+  def update =
     Platform.runLater {
       centerDragged = (stage.width.value / 2 + drag(0).toDouble, stage.height.value / 2 + drag(1).toDouble)
       stageSizeXY = (stage.width.value.toInt, stage.height.value.toInt)
       frame.update(frame.value + 1)
     }
 
-  val functions = Functions(stage, stageSizeXY(0), centerDragged, zoom)
+  val functions = Functions(stageSizeXY(0), centerDragged, zoom)
   val grid = Grid(centerDragged, stageSizeXY, zoom)
-  val functs = List(("x^2", Blue, 3), ("x", Red, 2), ("sin(x^2)", Pink, 4))
+  var image = Group()
 
   // generating the image
-  def image =
+  def draw =
     val zoomText = new Text {x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()} %"}
     grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY; grid.zoom = zoom
     functions.stageWidth = stageSizeXY(0); functions.centerDragged = centerDragged; functions.zoom = zoom
-    new Group(functions.evalFunctions, grid.getCoordinateSystem, zoomText)
+    image.children.addAll(functions.evalFunctions, grid.getCoordinateSystem)
+    if (showZoom) image.children.add(zoomText)
+    image
 
   var drag: (BigDecimal, BigDecimal) = (0, 0)
   var zoom: Double = 100
   val zoomSpeed = 2
+  var showZoom = false
 
   def initAction() = {
     var anchorPt: (Double, Double) = (0, 0)
@@ -80,10 +76,11 @@ object MainWindow extends JFXApp3 {
         event.screenY - anchorPt(1) + drag(1)
       )
       anchorPt = (event.screenX, event.screenY)
-      update()
+      update
     scene.onScroll = (event: ScrollEvent) => zoomer(event)
     scene.setOnKeyPressed(e => {e.getCode() match
       case KeyCode.F => functions.popUp
+      case KeyCode.Z => showZoom match {case true => showZoom = false; case false => showZoom = true}; update
       case _ => println("Button has no function")})
   }
 
@@ -101,6 +98,6 @@ object MainWindow extends JFXApp3 {
       drag(1) + relativeMousePosition(1) - newRelativeMousePosition(1)
     )
     zoom = newZoom
-    update()
+    update
   }
 }
