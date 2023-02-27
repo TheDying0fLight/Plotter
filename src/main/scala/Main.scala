@@ -89,7 +89,7 @@ object MainWindow extends JFXApp3 {
   def zoomer(event: ScrollEvent) = {
     var newZoom = (zoom + zoomSpeed * (event.deltaY * zoom / 100) / 10)
     if (newZoom > 1E10) newZoom = 1E10
-    else if (newZoom < 1E-10) newZoom = 1E-7
+    else if (newZoom < 1E-5) newZoom = 1E-5
     val zoomFactor = newZoom / zoom
     val relativeMousePosition =
       List(event.getX() - centerDragged(0), event.getY() - centerDragged(1))
