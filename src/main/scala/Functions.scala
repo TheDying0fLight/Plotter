@@ -48,15 +48,19 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
       grid.add(new Label(s"Color ${index+1}:"), 2, index)
       grid.add(colorInput, 3, index)
       colorInput.text.onChange{(_,_,newValue) =>
-        functionList(index) = (functionList(index)(0), valueOf(newValue), functionList(index)(2))
-        MainWindow.update}
+        try
+          functionList(index) = (functionList(index)(0), valueOf(newValue), functionList(index)(2))
+          MainWindow.update
+        catch
+          case _ => println("input is no valid Color")}
 
       val thicknessInput = new TextField{promptText = "Input a thickness"; text = thickness.toString}
       grid.add(new Label(s"Thickness ${index+1}:"), 4, index)
       grid.add(thicknessInput, 5, index)
       thicknessInput.text.onChange{(_,_,newValue) =>
-        functionList(index) = (functionList(index)(0), functionList(index)(1), newValue.toInt)
-        MainWindow.update}
+        if (newValue != "")
+          functionList(index) = (functionList(index)(0), functionList(index)(1), newValue.toInt)
+          MainWindow.update}
 
       functionPopUp.dialogPane().content = grid
       if (functionList(index)(0) == "") inputFields += ((functionInput,true))
