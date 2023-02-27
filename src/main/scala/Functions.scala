@@ -25,6 +25,7 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
     functionPopUp.getDialogPane.getButtonTypes.add(ButtonType("Done", ButtonData.OKDone))
   
     val grid = new GridPane {
+      prefHeight = 300
       hgap = 10
       vgap = 10
       padding = Insets(20, 100, 10, 10)
@@ -41,7 +42,7 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
         MainWindow.update
         if (inputFields(index)(1) && newValue != "")
           inputFields(index) = (inputFields(index)(0),false)
-          addInputField("", Blue, 2, inputFields.length)}
+          addInputField("", Blue, 3, inputFields.length)}
 
       val colorInput = new TextField{promptText = "Input a Color"; text = color.toString}
       grid.add(new Label(s"Color ${index+1}:"), 2, index)
@@ -58,14 +59,15 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
         MainWindow.update}
 
       functionPopUp.dialogPane().content = grid
-      inputFields += ((functionInput,true))
-      functionPopUp.show()
+      if (functionList(index)(0) == "") inputFields += ((functionInput,true))
+      else inputFields += ((functionInput,false))
     }
 
     functionList.zipWithIndex.foreach{case((function,color,thickness),index) =>
       addInputField(function, color, thickness, index)}
 
     if (inputFields.length == 0) addInputField("", Blue, 3, inputFields.length)
+    functionPopUp.show()
   }
 
   def evalFunctions = {

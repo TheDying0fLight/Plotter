@@ -29,9 +29,8 @@ class Grid(var centerDraggedXY: (Double, Double), var stageSizeXY: (Int, Int), v
   private def graphing(shape: (Double,Double,(Double, Double) => Double,Double,Double) => Node)(center: Double, border: Double) = {
     var thickness = gridThickness / 2
     var opacity = 0.2
-    var step = stepFinder
     var graph = new Group()
-    val stepDist = (step*(zoom/100))
+    val stepDist = (stepFinder*(zoom/100))
     def addShapes(addSub: (Double, Double) => Double, start: Double) =
       var point: Double = start
       while (point <= border && point >= 0) {
