@@ -55,17 +55,27 @@ object MainWindow extends JFXApp3 {
   // generating the image
   def draw =
     image.children.clear()
-    val zoomText = new Text {x = 10; y = 15; text = s"Zoom: ${BigDecimal(zoom, new MathContext(3)).toString()} %"}
     grid.centerDraggedXY = centerDragged; grid.stageSizeXY = stageSizeXY; grid.zoom = zoom
     functions.stageWidth = stageSizeXY(0); functions.centerDragged = centerDragged; functions.zoom = zoom
     image.children.addAll(functions.evalFunctions, grid.getCoordinateSystem)
-    if (showZoom) image.children.add(zoomText)
+    addUi
     image
+
+  var uiList = Array(("Zoom", false, ""), ("Frame Number", false, ""))
+
+  def addUi =
+    uiList(0) = uiList(0).copy(_3 = BigDecimal(zoom, new MathContext(3)).toString())
+    uiList(1) = uiList(1).copy(_3 = frame.value.toString())
+    var temp = 15
+    for (i <- 0 until uiList.length)
+      if (uiList(i)(1))
+        image.children.add(new Text {x = 10; y = temp; text = s"${uiList(i)(0)}: ${uiList(i)(2)}"})
+        temp += 15
 
   var drag: (BigDecimal, BigDecimal) = (0, 0)
   var zoom: Double = 100
   val zoomSpeed = 2
-  var showZoom = false
+  var showZoom, showImageCount = false
 
   def initAction = {
     var anchorPt: (Double, Double) = (0, 0)
@@ -80,9 +90,12 @@ object MainWindow extends JFXApp3 {
       anchorPt = (event.screenX, event.screenY)
       update
     scene.onScroll = (event: ScrollEvent) => zoomer(event)
+
+    def invert (bool: Boolean) = bool match {case true => false; case false => true}
     scene.setOnKeyPressed(e => {e.getCode() match
       case KeyCode.F => functions.popUp
-      case KeyCode.Z => showZoom match {case true => showZoom = false; case false => showZoom = true}; update
+      case KeyCode.Z => uiList(0) = uiList(0).copy(_2 = invert(uiList(0)(1))); update
+      case KeyCode.I => uiList(1) = uiList(1).copy(_2 = invert(uiList(1)(1))); update
       case _ => println("Button has no function")})
   }
 

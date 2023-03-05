@@ -90,7 +90,7 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
               case _ => {graph.children.add(poly); poly = new Polyline {stroke = c; strokeWidth = th}}
           graph.children.add(poly)
         catch
-          case _ => println("Error")
+          case _ => println("Invalid function")
     )
     graph
   }
