@@ -25,7 +25,6 @@ version := "1.0"
 // Want to use a published library in your project?
 // You can define other libraries as dependencies in your build like this:
 
-libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.1"
 libraryDependencies += "org.scalafx" %% "scalafx" % "19.0.0-R30"
 libraryDependencies += "com.elmakers.math" % "exp4j" % "1.0"
 
