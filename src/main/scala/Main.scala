@@ -73,12 +73,12 @@ object MainWindow extends JFXApp3 {
         temp += 15
 
   var drag: (BigDecimal, BigDecimal) = (0, 0)
-  var zoom: Double = 100
+  var zoom = 100.0
   val zoomSpeed = 2
   var showZoom, showImageCount = false
 
   def initAction = {
-    var anchorPt: (Double, Double) = (0, 0)
+    var anchorPt = (0.0, 0.0)
     val scene = stage.getScene()
     scene.onMousePressed = (event: MouseEvent) =>
       anchorPt = (event.screenX, event.screenY)
