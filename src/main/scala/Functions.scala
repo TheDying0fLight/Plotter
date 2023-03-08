@@ -13,6 +13,7 @@ import scala.collection.mutable.ArrayBuffer
 import scalafx.scene.control.ButtonType
 import scalafx.scene.control.ButtonBar.ButtonData
 import scalafx.scene.layout.VBox
+import plotter.MainWindow.stageSizeXY
 
 class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoom: Double):
   var functionList = ArrayBuffer[(String, Color, Int)]()
@@ -81,13 +82,28 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
         try
           var e = new ExpressionBuilder(fun).variable("x").build()
           var poly = new Polyline {stroke = c; strokeWidth = th}
-          for (i <- 0 to stageWidth)
+          var prevTemp = 0.0
+          var i = 0
+          while (i <= stageWidth)
             e.setVariable("x", ((i-centerDragged(0)) / zoom))
             try
               var temp = -(e.evaluate() * zoom) + centerDragged(1)
+              if ((prevTemp > stageSizeXY(1) && temp > stageSizeXY(1)))
+                while (temp > stageSizeXY(1))
+                  i += 1
+                  var temp = -(e.evaluate() * zoom) + centerDragged(1)
+                poly = new Polyline {stroke = c; strokeWidth = th}
+                poly.getPoints().addAll(i.toDouble, prevTemp)
+              else if ((prevTemp < 0 && temp < 0) )
+                while (temp < 0)
+                  i += 1
+                  var temp = -(e.evaluate() * zoom) + centerDragged(1)
+                poly = new Polyline {stroke = c; strokeWidth = th}
+                poly.getPoints().addAll(i.toDouble, prevTemp)
               poly.getPoints().addAll(i.toDouble, temp)
             catch
               case _ => {graph.children.add(poly); poly = new Polyline {stroke = c; strokeWidth = th}}
+            i += 1
           graph.children.add(poly)
         catch
           case _ => println("Invalid function")
