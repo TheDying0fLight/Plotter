@@ -24,7 +24,7 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
     var inputFields = ArrayBuffer[(TextField,Boolean)]()
 
     functionPopUp.getDialogPane.getButtonTypes.add(ButtonType("Done", ButtonData.OKDone))
-  
+
     val grid = new GridPane {
       prefHeight = 300
       hgap = 10
@@ -88,18 +88,6 @@ class Functions(var stageWidth: Int, var centerDragged: (Double,Double), var zoo
             e.setVariable("x", ((i-centerDragged(0)) / zoom))
             try
               var temp = -(e.evaluate() * zoom) + centerDragged(1)
-              if ((prevTemp > stageSizeXY(1) && temp > stageSizeXY(1)))
-                while (temp > stageSizeXY(1))
-                  i += 1
-                  var temp = -(e.evaluate() * zoom) + centerDragged(1)
-                poly = new Polyline {stroke = c; strokeWidth = th}
-                poly.getPoints().addAll(i.toDouble, prevTemp)
-              else if ((prevTemp < 0 && temp < 0) )
-                while (temp < 0)
-                  i += 1
-                  var temp = -(e.evaluate() * zoom) + centerDragged(1)
-                poly = new Polyline {stroke = c; strokeWidth = th}
-                poly.getPoints().addAll(i.toDouble, prevTemp)
               poly.getPoints().addAll(i.toDouble, temp)
             catch
               case _ => {graph.children.add(poly); poly = new Polyline {stroke = c; strokeWidth = th}}
